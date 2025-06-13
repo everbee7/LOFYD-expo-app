@@ -1,0 +1,10 @@
+{
+  "welcome": "Benvenuto",
+  "hello": "Ciao {{name}}",
+  "home": "Casa",
+  "profile": "Profilo",
+  "save": "Salva",
+  "cancel": "Annulla",
+  "loading": "Caricamento...",
+  "error": "Qualcosa è andato storto"
+}

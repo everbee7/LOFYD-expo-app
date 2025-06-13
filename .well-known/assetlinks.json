@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.lofyd.app",
+      "sha256_cert_fingerprints": [
+        "AA:5C:69:2D:2C:60:21:D6:9C:E9:47:7A:4E:CC:F8:ED:D3:9F:41:8E:16:C6:7B:63:59:D1:FC:77:12:A0:21:A8"
+      ]
+    }
+  }
+]
