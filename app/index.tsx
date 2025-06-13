@@ -1,5 +1,6 @@
-import { Redirect } from 'expo-router';
+import Loading from '@/components/common/Loading';
 
 export default function Index() {
-  return <Redirect href="/login" />;
+  // Just show loading while AuthGuard determines where to redirect
+  return <Loading />;
 }

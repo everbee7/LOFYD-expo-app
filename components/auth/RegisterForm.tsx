@@ -7,20 +7,12 @@ import { useTheme } from '../../contexts/ThemeContext';
 import Input from '../common/Input';
 import Button from '../common/Button';
 
-// Import validation utils
+// Import validation utils and types
 import { validateEmail, validatePassword } from '../../utils/validation';
-
-interface RegisterFormData {
-  email: string;
-  firstName: string;
-  lastName: string;
-  zipCode: string;
-  password: string;
-  confirmPassword: string;
-}
+import { SignUpRequest } from '../../types/auth';
 
 interface RegisterFormProps {
-  onRegister: (data: RegisterFormData) => Promise<void>;
+  onRegister: (data: SignUpRequest) => Promise<void>;
   onNavigateToLogin: () => void;
   loading?: boolean;
 }
@@ -34,7 +26,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [email, setEmail] = useState<string>('');
   const [firstName, setFirstName] = useState<string>('');
   const [lastName, setLastName] = useState<string>('');
-  const [zipCode, setZipCode] = useState<string>('');
+  const [postalCode, setPostalCode] = useState<string>(''); // Changed from zipCode
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
 
@@ -42,7 +34,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const [emailError, setEmailError] = useState<string>('');
   const [firstNameError, setFirstNameError] = useState<string>('');
   const [lastNameError, setLastNameError] = useState<string>('');
-  const [zipCodeError, setZipCodeError] = useState<string>('');
+  const [postalCodeError, setPostalCodeError] = useState<string>(''); // Changed from zipCodeError
   const [passwordError, setPasswordError] = useState<string>('');
   const [confirmPasswordError, setConfirmPasswordError] = useState<string>('');
 
@@ -53,7 +45,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     setEmailError('');
     setFirstNameError('');
     setLastNameError('');
-    setZipCodeError('');
+    setPostalCodeError('');
     setPasswordError('');
     setConfirmPasswordError('');
 
@@ -81,9 +73,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       hasError = true;
     }
 
-    // Zipcode validation
-    if (!zipCode.trim()) {
-      setZipCodeError('Home zipcode is required');
+    // Postal code validation (changed from zipcode)
+    if (!postalCode.trim()) {
+      setPostalCodeError('Postal code is required');
       hasError = true;
     }
 
@@ -107,13 +99,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
 
     if (hasError) return;
 
+    // Call the API with the correct data structure
     await onRegister({
-      email,
-      firstName,
-      lastName,
-      zipCode,
-      password,
-      confirmPassword
+      email: email.trim(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      password: password.trim(),
+      postalCode: postalCode.trim(),
     });
   };
 
@@ -159,15 +151,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           error={lastNameError}
         />
 
-        {/* Home Zipcode Input */}
+        {/* Postal Code Input - Updated field name */}
         <Input
-          placeholder="Home Zipcode"
-          value={zipCode}
-          onChangeText={setZipCode}
-          keyboardType="numeric"
+          placeholder="Postal Code"
+          value={postalCode}
+          onChangeText={setPostalCode}
+          keyboardType="default" // Changed from numeric to support various postal code formats
           autoComplete="postal-code"
           maxLength={10}
-          error={zipCodeError}
+          error={postalCodeError}
         />
 
         {/* Password Input */}

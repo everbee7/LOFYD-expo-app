@@ -52,10 +52,11 @@ export const apiRequest = async <T>(
                     headers: error.response.headers,
                 } : null,
             });
+            throw error.response?.data?.error || error.message;
         } else {
             console.error(`Unexpected Error (${endpoint}):`, error);
+            throw error;
         }
-        throw error;
     }
 };
 

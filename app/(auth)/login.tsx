@@ -6,28 +6,42 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Image
+  Image,
+  Alert
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 
-// Import auth components
+// Import auth components and store
 import LoginForm from '../../components/auth/LoginForm';
+import useAuthStore from '../../store/authStore';
 
 export default function LoginScreen() {
+  const router = useRouter();
   const { theme } = useTheme();
+  const { login, error, clearError } = useAuthStore();
   const [loading, setLoading] = useState(false);
 
   const styles = createStyles(theme);
 
   const handleLogin = async (email: string, password: string) => {
     setLoading(true);
+    clearError();
+
     try {
-      console.log('Login attempt:', { email, password });
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      // Navigate to dashboard or handle authentication
-    } catch (error) {
+      const user = await login(email, password);
+      console.log('Login successful:', user);
+
+      // Navigation will be handled by AuthGuard in _layout.tsx
+      // The user will automatically be redirected to the main app
+
+    } catch (error: any) {
       console.error('Login error:', error);
+      Alert.alert(
+        'Login Failed',
+        error?.data?.message || error?.message || error  || 'Invalid email or password',
+        [{ text: 'OK' }]
+      );
     } finally {
       setLoading(false);
     }
@@ -39,7 +53,6 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoidingView}
       >
-
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
           showsVerticalScrollIndicator={false}

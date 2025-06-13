@@ -8,46 +8,46 @@ import {
   Platform,
   ScrollView,
   Image,
-  Text
+  Text,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 
-// Import auth components
+// Import auth components and store
 import RegisterForm from '../../components/auth/RegisterForm';
 import ConfirmCodeForm from '../../components/auth/ConfirmCodeForm';
-
-interface RegisterFormData {
-  email: string;
-  firstName: string;
-  lastName: string;
-  zipCode: string;
-  password: string;
-  confirmPassword: string;
-}
+import useAuthStore from '../../store/authStore';
+import { SignUpRequest } from '../../types/auth';
 
 export default function RegisterScreen() {
   const router = useRouter();
   const { theme } = useTheme();
+  const { signup, confirmSignup, error, clearError } = useAuthStore();
+
   const [loading, setLoading] = useState<boolean>(false);
-  const [isCodeSent, setIsCodeSent] = useState<boolean>(true);
+  const [isCodeSent, setIsCodeSent] = useState<boolean>(false);
   const [userEmail, setUserEmail] = useState<string>('');
 
   const styles = createStyles(theme);
 
-  const handleRegister = async (data: RegisterFormData): Promise<void> => {
+  const handleRegister = async (data: SignUpRequest): Promise<void> => {
     setLoading(true);
+    clearError();
+
     try {
-      console.log('Sign up attempt:', data);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      // Show confirmation code screen
+      await signup(data);
       console.log('Registration successful, showing confirmation code screen');
       setUserEmail(data.email);
       setIsCodeSent(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sign up error:', error);
+      Alert.alert(
+        'Registration Failed',
+        error?.data?.message || error?.message || error || 'An error occurred during registration',
+        [{ text: 'OK' }]
+      );
     } finally {
       setLoading(false);
     }
@@ -55,15 +55,20 @@ export default function RegisterScreen() {
 
   const handleConfirmCode = async (code: string): Promise<void> => {
     setLoading(true);
+    clearError();
+
     try {
-      console.log('Confirming code:', code, 'for email:', userEmail);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Code confirmed successfully');
-      // Navigate to dashboard or main app
-      // router.push('/dashboard');
-    } catch (error) {
+      const user = await confirmSignup(userEmail, code);
+      console.log('Code confirmed successfully, user logged in:', user);
+
+      router.push('/(auth)/login');
+    } catch (error: any) {
       console.error('Code confirmation error:', error);
+      Alert.alert(
+        'Confirmation Failed',
+        error?.data?.message || error?.message || error || 'Invalid confirmation code',
+        [{ text: 'OK' }]
+      );
     } finally {
       setLoading(false);
     }
@@ -71,26 +76,45 @@ export default function RegisterScreen() {
 
   const handleResendCode = async (): Promise<void> => {
     setLoading(true);
+    clearError();
+
     try {
-      console.log('Resending code to:', userEmail);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Note: Your API doesn't seem to have a resend endpoint
+      // You might need to call signup again or implement a separate resend endpoint
+      await signup({
+        email: userEmail,
+        firstName: '', // You might need to store these values
+        lastName: '',
+        password: '',
+        postalCode: ''
+      });
+
       console.log('Code resent successfully');
-    } catch (error) {
+      Alert.alert('Code Resent', 'A new confirmation code has been sent to your email.', [{ text: 'OK' }]);
+    } catch (error: any) {
       console.error('Resend code error:', error);
+      Alert.alert(
+        'Resend Failed',
+        error?.data?.message || error?.message || error || 'Failed to resend confirmation code',
+        [{ text: 'OK' }]
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleLogIn = (): void => {
-    // Navigate to login screen
-    router.push('/login');
+    router.push('/(auth)/login');
   };
 
   const handleBack = (): void => {
-    // Navigate back
-    router.back();
+    if (isCodeSent) {
+      // Go back to registration form
+      setIsCodeSent(false);
+    } else {
+      // Go back to previous screen
+      router.back();
+    }
   };
 
   return (

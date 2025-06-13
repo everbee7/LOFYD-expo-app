@@ -1,96 +1,56 @@
-// services/auth.ts
-import { User } from '../types/auth';
+
 import { apiRequest } from './api';
+import {
+  SignUpRequest,
+  SignUpResponse,
+  ConfirmSignUpRequest,
+  ConfirmSignUpResponse,
+  LoginRequest,
+  LoginResponse,
+  TokenLoginRequest,
+  TokenLoginResponse,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
+  User
+} from '../types/auth';
 
-// Authentication API service
+// Auth service functions
+export const authService = {
+  // User Signup
+  async signup(signupData: SignUpRequest): Promise<SignUpResponse> {
+    return apiRequest<SignUpResponse>('/auth/signup', 'POST', signupData);
+  },
 
-export interface AuthResponse {
-    token: string;
-    userData: User;
-}
+  // Confirm Signup
+  async confirmSignup(confirmData: ConfirmSignUpRequest): Promise<ConfirmSignUpResponse> {
+    return apiRequest<ConfirmSignUpResponse>('/auth/confirm-signup', 'POST', confirmData);
+  },
 
-interface PushTokenData {
-    token: string;
-    platform?: 'ios' | 'android' | 'web';
-    deviceId?: string;
-}
+  // User Login
+  async login(loginData: LoginRequest): Promise<LoginResponse> {
+    return apiRequest<LoginResponse>('/auth/login', 'POST', loginData);
+  },
 
-export const login = async (email: string, password: string): Promise<AuthResponse> => {
-    return apiRequest<AuthResponse>('/auth/login', 'POST', {
-        email,
-        password
-    });
-};
+  // Token Login
+  async loginWithToken(tokenData: TokenLoginRequest): Promise<TokenLoginResponse> {
+    return apiRequest<TokenLoginResponse>('/auth/login/token', 'POST', tokenData);
+  },
 
-export const signup = async (
-    email: string,
-    password: string,
-    name: string,
-    role: 'manager' | 'team_member',
-    additionalInfo?: {
-        companyName?: string;
-        vatNumber?: string;
-        address?: string;
-        phoneNumber?: string;
-    }
-): Promise<AuthResponse> => {
-    return apiRequest<AuthResponse>('/auth/signup', 'POST', {
-        email,
-        password,
-        name,
-        role,
-        ...additionalInfo
-    });
-};
+  // Forgot Password
+  async forgotPassword(forgotData: ForgotPasswordRequest): Promise<ForgotPasswordResponse> {
+    return apiRequest<ForgotPasswordResponse>('/auth/forgot-password', 'POST', forgotData);
+  },
 
-export const getUserData = async (token: string): Promise<{ data: User }> => {
-    return apiRequest<{ data: User }>('/auth/me', 'GET');
-};
+  // Reset Password
+  async resetPassword(resetData: ResetPasswordRequest): Promise<ResetPasswordResponse> {
+    return apiRequest<ResetPasswordResponse>('/auth/reset-password', 'POST', resetData);
+  },
 
-export const forgotPassword = async (email: string): Promise<any> => {
-    return apiRequest<void>('/auth/forgot-password', 'POST', { email });
-};
-
-export const resetPassword = async (
-    email: string,
-    code: string,
-    newPassword: string
-): Promise<any> => {
-    return apiRequest<any>('/auth/reset-password', 'POST', {
-        email,
-        code,
-        newPassword
-    });
-};
-
-export const updateProfile = async (
-    name: string,
-    email: string,
-): Promise<any> => {
-    return apiRequest<any>('/auth/update-profile', 'PUT', {
-        name,
-        email
-    });
-};
-
-export const updatePassword = async (
-    currentPassword: string,
-    newPassword: string,
-): Promise<AuthResponse> => {
-    return apiRequest<AuthResponse>('/auth/update-password', 'POST', {
-        currentPassword,
-        newPassword
-    });
-};
-
-export const registerPushToken = async (
-    tokenData: PushTokenData
-): Promise<AuthResponse> => {
-    return apiRequest<AuthResponse>('/auth/push-token', 'POST', tokenData);
-};
-
-export const removePushToken = async (
-    token: string
-): Promise<AuthResponse> => {
-    return apiRequest<AuthResponse>('/auth/push-token', 'DELETE', { token });
+  // Get user data (you might need this for token validation)
+  // Note: This endpoint is not in your API spec, you may need to add it or adjust
+  async getUserData(): Promise<{ data: User }> {
+    return apiRequest<{ data: User }>('/user/profile', 'GET');
+  },
 };

@@ -32,7 +32,7 @@ export const theme = {
     // Input colors
     inputBackground: '#ffffff', // Light gray input background
     inputBorder: '#e0e0e0', // Input borders
-    inputReadOnly: "#EBE7F6",
+    inputReadOnly: "#00625222",
     inputPlaceholder: '#999999', // Placeholder text
     inputFocusBorder: '#3b82f666',
 

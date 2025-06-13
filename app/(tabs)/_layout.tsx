@@ -66,7 +66,6 @@ export default function TabLayout() {
           fontSize: 12,
           fontWeight: '500',
           marginTop: 4,
-          display: 'none',
         },
         headerStyle: {
           backgroundColor: theme.colors.tabBarBackground,
@@ -114,7 +113,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile1",
+          title: "Manage",
           tabBarIcon: ({ color, focused }) => (
             <TabIcon 
               name="person" 

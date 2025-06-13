@@ -8,15 +8,17 @@ import {
   Platform,
   ScrollView,
   Image,
-  Text
+  Text,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 
-// Import auth components
+// Import auth components and store
 import EmailForm from '../../components/auth/EmailForm';
 import ResetPasswordForm from '../../components/auth/ResetPasswordForm';
+import useAuthStore from '../../store/authStore';
 
 interface ResetPasswordFormData {
   password: string;
@@ -27,6 +29,8 @@ interface ResetPasswordFormData {
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const { theme } = useTheme();
+  const { forgotPassword, resetPassword, error, clearError } = useAuthStore();
+  
   const [loading, setLoading] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState<'email' | 'reset'>('email');
   const [userEmail, setUserEmail] = useState<string>('');
@@ -35,15 +39,26 @@ export default function ForgotPasswordScreen() {
 
   const handleSendPasswordReset = async (email: string): Promise<void> => {
     setLoading(true);
+    clearError();
+    
     try {
-      console.log('Password reset request for:', email);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await forgotPassword(email);
       console.log('Password reset email sent successfully');
       setUserEmail(email);
-      setCurrentStep('reset'); // Go directly to reset password step
-    } catch (error) {
+      setCurrentStep('reset');
+      
+      Alert.alert(
+        'Reset Code Sent',
+        'A password reset code has been sent to your email address.',
+        [{ text: 'OK' }]
+      );
+    } catch (error: any) {
       console.error('Password reset error:', error);
+      Alert.alert(
+        'Reset Failed',
+        error?.data?.message || error?.message || error  || 'Failed to send reset code',
+        [{ text: 'OK' }]
+      );
     } finally {
       setLoading(false);
     }
@@ -51,27 +66,39 @@ export default function ForgotPasswordScreen() {
 
   const handleResetPassword = async (data: ResetPasswordFormData): Promise<void> => {
     setLoading(true);
+    clearError();
+    
     try {
-      console.log('Reset password attempt:', {
-        email: userEmail,
-        resetCode: data.resetCode,
-        newPassword: data.password
-      });
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await resetPassword(userEmail, data.password, data.resetCode);
       console.log('Password reset successful');
-      // Navigate to login screen or show success message
-      // router.push('/login');
-    } catch (error) {
+      
+      Alert.alert(
+        'Password Reset Successful',
+        'Your password has been reset and you can log in.',
+        [{ text: 'OK' }]
+      );
+      
+      router.push('/(auth)/login');
+    } catch (error: any) {
       console.error('Password reset error:', error);
+      Alert.alert(
+        'Reset Failed',
+        error?.data?.message || error?.message || error  || 'Invalid reset code or password',
+        [{ text: 'OK' }]
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const handleBack = (): void => {
-    // Navigate back
-    router.back();
+    if (currentStep === 'reset') {
+      // Go back to email step
+      setCurrentStep('email');
+    } else {
+      // Go back to previous screen
+      router.back();
+    }
   };
 
   return (
@@ -102,7 +129,7 @@ export default function ForgotPasswordScreen() {
               loading={loading}
               buttonTitle="Send Password Reset Email"
               buttonIcon={<Ionicons name="mail-outline" size={18} color={theme.colors.background} />}
-              welcomeText="Enter your email address to send\npassword reset instructions."
+              welcomeText="Enter your email address to send password reset instructions."
             />
           ) : (
             <ResetPasswordForm 

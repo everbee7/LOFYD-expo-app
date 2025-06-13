@@ -23,7 +23,7 @@ const EmailForm: React.FC<EmailFormProps> = ({
   loading = false,
   buttonTitle = "Send Password Reset Email",
   buttonIcon,
-  welcomeText = "Enter your email address to send\npassword reset instructions."
+  welcomeText = "Enter your email address to send password reset instructions."
 }) => {
   const { theme } = useTheme();
   const [email, setEmail] = useState<string>('');

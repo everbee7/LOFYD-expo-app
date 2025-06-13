@@ -82,7 +82,9 @@ export default {
         projectId: "0ed46fb4-8b52-4450-84c0-ef27e18e6778"
       },
       API_URL: process.env.EXPO_PUBLIC_API_URL,
-      APP_URL: process.env.EXPO_PUBLIC_APP_URL,
+      AWS_REGION: process.env.EXPO_PUBLIC_AWS_REGION,
+      MIN_VERIFICATION_COUNT: process.env.EXPO_PUBLIC_MIN_VERIFICATION_COUNT,
+      ENVIRONMENT: process.env.EXPO_PUBLIC_ENVIRONMENT,
     }
   }
 };
