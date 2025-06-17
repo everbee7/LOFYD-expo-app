@@ -9,6 +9,8 @@ import {
   LoginResponse,
   TokenLoginRequest,
   TokenLoginResponse,
+  RefreshTokenRequest,
+  RefreshTokenResponse,
   ForgotPasswordRequest,
   ForgotPasswordResponse,
   ResetPasswordRequest,
@@ -38,6 +40,11 @@ export const authService = {
     return apiRequest<TokenLoginResponse>('/auth/login/token', 'POST', tokenData);
   },
 
+  // Refresh Token
+  async refreshToken(tokenData: RefreshTokenRequest): Promise<RefreshTokenResponse> {
+    return apiRequest<RefreshTokenResponse>('/auth/refresh-token', 'POST', tokenData);
+  },
+
   // Forgot Password
   async forgotPassword(forgotData: ForgotPasswordRequest): Promise<ForgotPasswordResponse> {
     return apiRequest<ForgotPasswordResponse>('/auth/forgot-password', 'POST', forgotData);
@@ -50,7 +57,7 @@ export const authService = {
 
   // Get user data (you might need this for token validation)
   // Note: This endpoint is not in your API spec, you may need to add it or adjust
-  async getUserData(): Promise<{ data: User }> {
-    return apiRequest<{ data: User }>('/user/profile', 'GET');
+  async getUserData(): Promise<User> {
+    return apiRequest<User>('/auth/user-info', 'GET');
   },
 };

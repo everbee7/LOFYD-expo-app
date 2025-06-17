@@ -10,7 +10,7 @@ const API_URL = Constants.expoConfig?.extra?.API_URL || 'http://localhost:5000/a
 
 // Helper to get auth token
 const getToken = async (): Promise<string | null> => {
-    return await AsyncStorage.getItem('userToken');
+    return await AsyncStorage.getItem('idToken');
 };
 
 // Helper for API requests

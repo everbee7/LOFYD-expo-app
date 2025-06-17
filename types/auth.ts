@@ -1,6 +1,6 @@
 
 export interface User {
-  id: string;
+  userId: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -38,9 +38,12 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   user?: User;
+  userId: string;
   email: string;
+  username: string;
   firstName: string;
   lastName: string;
+  postalCode: string;
   token: {
     accessToken: string;
     expiresAt: string;
@@ -48,9 +51,6 @@ export interface LoginResponse {
     refreshToken: string;
     tokenType: string;
   },
-  userId: string;
-  username: string;
-  zipcode: string;
 }
 
 export interface TokenLoginRequest {
@@ -58,8 +58,33 @@ export interface TokenLoginRequest {
 }
 
 export interface TokenLoginResponse {
-  token: string;
-  user?: User;
+  userId: string;
+  email: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  postalCode: string;
+}
+
+export interface RefreshTokenRequest {
+  userId: string;
+  refreshToken: string;
+}
+
+export interface RefreshTokenResponse {
+  userId: string;
+  email: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  postalCode: string;
+  token: {
+    accessToken: string;
+    expiresAt: string;
+    idToken: string;
+    refreshToken: string;
+    tokenType: string;
+  }
 }
 
 export interface ForgotPasswordRequest {
@@ -88,6 +113,9 @@ export interface AuthState {
   // Core auth methods
   initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<User>;
+  // Token login
+  loginWithToken: (idToken: string) => Promise<User>;
+  refreshToken: (userId: string, refreshToken: string) => Promise<User>;
   signup: (signupData: SignUpRequest) => Promise<void>;
   confirmSignup: (email: string, confirmCode: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -96,8 +124,6 @@ export interface AuthState {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (email: string, password: string, resetCode: string) => Promise<void>;
   
-  // Token login
-  loginWithToken: (idToken: string) => Promise<User>;
   
   // Utility methods
   clearError: () => void;

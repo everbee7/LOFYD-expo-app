@@ -12,23 +12,13 @@ const useAuthStore = create<AuthState>((set, get) => ({
 	initialize: async () => {
 		try {
 			set({ isLoading: true });
-			const token = await AsyncStorage.getItem('userToken');
-			console.log('token', token);
+			const idToken = await AsyncStorage.getItem('idToken');
 
-			if (token) {
+			if (idToken) {
 				try {
-					// const userData = await authService.getUserData();
-					// set({ user: userData.data, isLoading: false });
-					set({ user: {
-						"id": "545894b8-4001-702e-a546-b67594ba01c9",
-						"email": "creativemoderndev0831+1@gmail.com",
-						"firstName": "123",
-						"lastName": "123",
-						"postalCode": "12345"
-					}, isLoading: false });
+					const data = await authService.getUserData();
+					set({ user: data, isLoading: false });
 				} catch (error) {
-					// Token might be invalid, remove it
-					await AsyncStorage.removeItem('userToken');
 					set({ user: null, isLoading: false });
 				}
 			} else {
@@ -48,22 +38,79 @@ const useAuthStore = create<AuthState>((set, get) => ({
 			const response = await authService.login({ email, password });
 
 			console.log(response);
-			// Store token
-			await AsyncStorage.setItem('userToken', response.token.accessToken);
 
 			const user = {
-				id: response.userId,
+				userId: response.userId,
 				email: response.email,
 				firstName: response.firstName,
 				lastName: response.lastName,
-				postalCode: response.zipcode,
+				postalCode: response.postalCode,
 			}
+
+			// Store token & simple userInfo
+			await AsyncStorage.setItem('idToken', response.token.idToken);
+			await AsyncStorage.setItem('userId', response.userId);
+			await AsyncStorage.setItem('accessToken', response.token.accessToken);
+			await AsyncStorage.setItem('refreshToken', response.token.refreshToken);
 
 			set({ user: user, error: null });
 
 			return user;
 		} catch (error: any) {
 			const errMsg = error?.data?.message || error?.message || error || 'Login failed';
+			set({ isLoading: false, error: errMsg });
+			throw error;
+		}
+	},
+
+	// Token login method
+	loginWithToken: async (idToken: string): Promise<User> => {
+		try {
+			set({ isLoading: true, error: null });
+
+			const user = await authService.loginWithToken({ idToken });
+			await AsyncStorage.setItem('idToken', idToken);
+
+			if (user) {
+				set({ user, isLoading: false });
+				return user;
+			}
+
+			return user;
+		} catch (error: any) {
+			const errMsg = error?.data?.message || error?.message || error || 'Token login failed';
+			set({ isLoading: false, error: errMsg });
+			throw error;
+		}
+	},
+
+	// Refresh token method
+	refreshToken: async (userId: string, refreshToken: string): Promise<User> => {
+		try {
+			set({ isLoading: true, error: null });
+
+			const response = await authService.refreshToken({ userId, refreshToken });
+			await AsyncStorage.setItem('idToken', response.token.idToken);
+			await AsyncStorage.setItem('userId', response.userId);
+			await AsyncStorage.setItem('accessToken', response.token.accessToken);
+			await AsyncStorage.setItem('refreshToken', response.token.refreshToken);
+
+			const user = {
+				userId: response.userId,
+				email: response.email,
+				firstName: response.firstName,
+				lastName: response.lastName,
+				postalCode: response.postalCode,
+			}
+
+			if (user) {
+				set({ user, isLoading: false });
+				return user;
+			}
+
+			return user;
+		} catch (error: any) {
+			const errMsg = error?.data?.message || error?.message || error || 'Token login failed';
 			set({ isLoading: false, error: errMsg });
 			throw error;
 		}
@@ -102,7 +149,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
 	// Logout method
 	logout: async (): Promise<void> => {
 		try {
-			await AsyncStorage.removeItem('userToken');
+			await AsyncStorage.removeItem('idToken');
 			set({ user: null, error: null });
 		} catch (error: any) {
 			console.error('Failed to logout:', error);
@@ -136,32 +183,6 @@ const useAuthStore = create<AuthState>((set, get) => ({
 			set({ isLoading: false });
 		} catch (error: any) {
 			const errMsg = error?.data?.message || error?.message || error || 'Password reset failed';
-			set({ isLoading: false, error: errMsg });
-			throw error;
-		}
-	},
-
-	// Token login method
-	loginWithToken: async (idToken: string): Promise<User> => {
-		try {
-			set({ isLoading: true, error: null });
-
-			const response = await authService.loginWithToken({ idToken });
-
-			await AsyncStorage.setItem('userToken', response.token);
-
-			if (response.user) {
-				set({ user: response.user, isLoading: false });
-				return response.user;
-			}
-
-			// Fetch user data if not included
-			const userData = await authService.getUserData();
-			set({ user: userData.data, isLoading: false });
-			return userData.data;
-
-		} catch (error: any) {
-			const errMsg = error?.data?.message || error?.message || error || 'Token login failed';
 			set({ isLoading: false, error: errMsg });
 			throw error;
 		}

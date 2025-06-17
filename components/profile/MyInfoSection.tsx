@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -12,7 +12,7 @@ interface UserInfo {
   lastName: string;
   email: string;
   birthday: string;
-  zipCode: string;
+  postalCode: string;
   frequency: string;
 }
 
@@ -32,6 +32,10 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
   const { theme } = useTheme();
   const [formData, setFormData] = useState<UserInfo>(userInfo);
   const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    setFormData(userInfo);
+  }, [userInfo])
 
   const styles = createStyles(theme);
 
@@ -110,8 +114,8 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
         <Input
           label="Home Zipcode"
           placeholder="Home Zipcode"
-          value={formData.zipCode}
-          onChangeText={(text) => setFormData({ ...formData, zipCode: text })}
+          value={formData.postalCode}
+          onChangeText={(text) => setFormData({ ...formData, postalCode: text })}
           keyboardType="numeric"
           maxLength={10}
           editable={isEditing}

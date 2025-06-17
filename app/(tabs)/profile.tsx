@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   ScrollView
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -16,13 +17,15 @@ import Tabs from '../../components/common/Tabs';
 import MyInfoSection from '../../components/profile/MyInfoSection';
 import SettingsSection from '../../components/profile/SettingsSection';
 import useAuthStore from '@/store/authStore';
+import { biometricService } from '@/services/biometric';
+import { authService } from '@/services/auth';
 
 interface UserInfo {
   firstName: string;
   lastName: string;
   email: string;
   birthday: string;
-  zipCode: string;
+  postalCode: string;
   frequency: string;
 }
 
@@ -42,16 +45,16 @@ export default function ProfileScreen() {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('myInfo');
   const [loading, setLoading] = useState(false);
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
 
   // Sample user data
   const [userInfo, setUserInfo] = useState<UserInfo>({
-    firstName: 'Michael',
-    lastName: 'Jackson',
-    email: 'myemail@gmail.com',
-    birthday: '01/01/1980',
-    zipCode: '75265',
-    frequency: '1-2 Weekly'
+    firstName: '',
+    lastName: '',
+    email: '',
+    birthday: '',
+    postalCode: '',
+    frequency: ''
   });
 
   // Sample settings data
@@ -114,6 +117,29 @@ export default function ProfileScreen() {
     }
   ]);
 
+  useEffect(() => {
+    try {
+      const initUserInfo = async () => {
+        setLoading(true);
+        const data = await authService.getUserData();
+        const updatedUserInfo = {
+          ...userInfo,
+          ...data
+        };
+        console.log('data', data, updatedUserInfo);
+        setUserInfo({
+          ...updatedUserInfo
+        });
+      };
+
+      initUserInfo();
+    } catch (error) {
+
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const styles = createStyles(theme);
 
   const tabs = [
@@ -146,12 +172,12 @@ export default function ProfileScreen() {
   };
 
   const handleUpdateSetting = (id: string, value: any) => {
-    setSettingsData(prev => 
-      prev.map(setting => 
+    setSettingsData(prev =>
+      prev.map(setting =>
         setting.id === id ? { ...setting, value } : setting
       )
     );
-    
+
     // Handle biometric setting specifically
     if (id === 'biometric') {
       handleBiometricToggle(value);
@@ -162,53 +188,36 @@ export default function ProfileScreen() {
 
   const handleBiometricToggle = async (enabled: boolean) => {
     if (enabled) {
-      // Here you would implement biometric authentication setup
-      // For example, using expo-local-authentication or react-native-biometrics
-      console.log('Enabling biometric authentication...');
-      
-      // Example implementation:
-      // try {
-      //   const biometricRecords = await LocalAuthentication.isEnrolledAsync();
-      //   if (biometricRecords) {
-      //     const result = await LocalAuthentication.authenticateAsync({
-      //       promptMessage: 'Authenticate to enable biometric login',
-      //       fallbackLabel: 'Use password instead'
-      //     });
-      //     
-      //     if (result.success) {
-      //       // Store biometric preference
-      //       await AsyncStorage.setItem('biometricEnabled', 'true');
-      //       console.log('Biometric authentication enabled');
-      //     } else {
-      //       // Reset toggle if authentication failed
-      //       setSettingsData(prev => 
-      //         prev.map(setting => 
-      //           setting.id === 'biometric' ? { ...setting, value: false } : setting
-      //         )
-      //       );
-      //     }
-      //   } else {
-      //     Alert.alert('No Biometric Records', 'Please set up biometric authentication in your device settings first.');
-      //     // Reset toggle
-      //     setSettingsData(prev => 
-      //       prev.map(setting => 
-      //         setting.id === 'biometric' ? { ...setting, value: false } : setting
-      //       )
-      //     );
-      //   }
-      // } catch (error) {
-      //   console.error('Biometric setup error:', error);
-      //   // Reset toggle on error
-      //   setSettingsData(prev => 
-      //     prev.map(setting => 
-      //       setting.id === 'biometric' ? { ...setting, value: false } : setting
-      //     )
-      //   );
-      // }
+      // Get current user token for biometric setup
+      const idToken = await AsyncStorage.getItem('idToken');
+      const refreshToken = await AsyncStorage.getItem('refreshToken');
+      const userId = await AsyncStorage.getItem('userId');
+
+      if (!idToken || !refreshToken || !userId) {
+        console.error('No user token found for biometric setup');
+        setSettingsData(prev =>
+          prev.map(setting =>
+            setting.id === 'biometric' ? { ...setting, value: false } : setting
+          )
+        );
+        return;
+      }
+
+      // Enable biometric authentication
+      const success = await biometricService.enableBiometric(userId, idToken, refreshToken);
+
+      if (!success) {
+        // Reset toggle if enabling failed
+        setSettingsData(prev =>
+          prev.map(setting =>
+            setting.id === 'biometric' ? { ...setting, value: false } : setting
+          )
+        );
+      }
     } else {
       // Disable biometric authentication
-      console.log('Disabling biometric authentication...');
-      // await AsyncStorage.removeItem('biometricEnabled');
+      await biometricService.disableBiometric();
+      console.log('Biometric authentication disabled');
     }
   };
 
@@ -260,7 +269,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* Content */}
-      <ScrollView 
+      <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}

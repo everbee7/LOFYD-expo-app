@@ -40,7 +40,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       // User is authenticated but on auth screen, redirect to home
       router.replace('/(tabs)/dashboard'); // Adjust this to your main screen
     }
-  }, [user?.id, segments, isLoading, router]);
+  }, [user?.userId, segments, isLoading, router]);
 
   if (isLoading) {
     return <Loading />;
