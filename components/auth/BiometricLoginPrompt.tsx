@@ -1,5 +1,3 @@
-// components/auth/BiometricLoginPrompt.tsx
-
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,22 +47,35 @@ const BiometricLoginPrompt: React.FC<BiometricLoginPromptProps> = ({
       const result = await biometricService.biometricLogin();
 
       if (result.success && result.idToken && result.userId && result.refreshToken) {
-        // Use token to authenticate user
-        try {
-          // login with token
-          await loginWithToken(result.idToken);
-        } catch (error) {
+        // Check token status from client-side validation
+        if (result.tokenStatus === 'valid') {
+          // Token is valid, proceed with login
           try {
-            // idToken is expired and try to refresh token
-            await refreshToken(result.userId, result.refreshToken);
+            await loginWithToken(result.idToken);
+            onSuccess();
+            return;
           } catch (error) {
-            // refresh token is expired or invalid
-            Alert.alert('Authentication Error', 'Refresh token is expired, please login with password', [
-              { text: 'Use Password', onPress: onFallback }
-            ]);
+            console.error('Login with token failed:', error);
+            // If loginWithToken fails even with valid token, try refresh
           }
         }
-        onSuccess();
+
+        // Token is expired or loginWithToken failed, try refresh token
+        try {
+          await refreshToken(result.userId, result.refreshToken);
+          onSuccess();
+        } catch (error) {
+          console.error('Refresh token failed:', error);
+          // Both tokens are expired or invalid
+          setIsAuthenticating(false);
+          Alert.alert(
+            'Authentication Required', 
+            'Your biometric authentication session has expired. Please sign in with your password to continue using the app.',
+            [
+              { text: 'Sign In', onPress: onFallback }
+            ]
+          );
+        }
       } else {
         // Biometric authentication failed or no token
         setIsAuthenticating(false);
@@ -72,10 +83,14 @@ const BiometricLoginPrompt: React.FC<BiometricLoginPromptProps> = ({
     } catch (error) {
       console.error('Biometric login error:', error);
       setIsAuthenticating(false);
-      Alert.alert('Authentication Error', 'An error occurred during biometric authentication.', [
-        { text: 'Try Again', onPress: handleBiometricLogin },
-        { text: 'Use Password', onPress: onFallback }
-      ]);
+      Alert.alert(
+        'Authentication Error', 
+        'We encountered an issue with biometric authentication. Please try again or use your password to sign in.',
+        [
+          { text: 'Try Again', onPress: handleBiometricLogin },
+          { text: 'Use Password', onPress: onFallback }
+        ]
+      );
     }
   };
 

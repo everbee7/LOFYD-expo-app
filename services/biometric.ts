@@ -1,5 +1,3 @@
-// services/biometric.ts
-
 import * as LocalAuthentication from 'expo-local-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform } from 'react-native';
@@ -7,7 +5,7 @@ import { Alert, Platform } from 'react-native';
 const BIOMETRIC_ENABLED_KEY = 'biometricEnabled';
 const BIOMETRIC_USER_ID = 'biometricUserId';
 const BIOMETRIC_USER_TOKEN_KEY = 'biometricUserToken';
-const BIOMETRIC_USER_REFRESH_TOKEN_KEY = 'biometricRfreshUserToken';
+const BIOMETRIC_USER_REFRESH_TOKEN_KEY = 'biometricUserRefreshToken';
 
 export interface BiometricCapabilities {
   isAvailable: boolean;
@@ -15,6 +13,18 @@ export interface BiometricCapabilities {
   supportedTypes: LocalAuthentication.AuthenticationType[];
   biometricType: string;
 }
+
+// Helper function to check if JWT token is expired
+const isTokenExpired = (token: string): boolean => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const currentTime = Math.floor(Date.now() / 1000);
+    return payload.exp < currentTime;
+  } catch (error) {
+    console.error('Error parsing token:', error);
+    return true; // Consider invalid tokens as expired
+  }
+};
 
 export const biometricService = {
   // Check device biometric capabilities
@@ -123,11 +133,11 @@ export const biometricService = {
       );
 
       if (authResult.success) {
-        // Save biometric preference and user token
+        // Save biometric preference and user token using AsyncStorage
         await AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, 'true');
         await AsyncStorage.setItem(BIOMETRIC_USER_ID, userId);
         await AsyncStorage.setItem(BIOMETRIC_USER_TOKEN_KEY, idToken);
-        await AsyncStorage.setItem(BIOMETRIC_USER_TOKEN_KEY, refreshToken);
+        await AsyncStorage.setItem(BIOMETRIC_USER_REFRESH_TOKEN_KEY, refreshToken);
 
         Alert.alert(
           'Biometric Enabled',
@@ -202,8 +212,24 @@ export const biometricService = {
     }
   },
 
+  // Update biometric stored tokens (call this after successful login/refresh)
+  async updateBiometricTokens(userId: string, idToken: string, refreshToken: string): Promise<void> {
+    try {
+      const isEnabled = await this.isBiometricEnabled();
+      
+      if (isEnabled) {
+        await AsyncStorage.setItem(BIOMETRIC_USER_ID, userId);
+        await AsyncStorage.setItem(BIOMETRIC_USER_TOKEN_KEY, idToken);
+        await AsyncStorage.setItem(BIOMETRIC_USER_REFRESH_TOKEN_KEY, refreshToken);
+        console.log('Biometric tokens updated successfully');
+      }
+    } catch (error) {
+      console.error('Error updating biometric tokens:', error);
+    }
+  },
+
   // Perform biometric login
-  async biometricLogin(): Promise<{ success: boolean; userId?: string ; idToken?: string; refreshToken?: string }> {
+  async biometricLogin(): Promise<{ success: boolean; userId?: string ; idToken?: string; refreshToken?: string; tokenStatus?: 'valid' | 'expired' | 'invalid' }> {
     try {
       const isEnabled = await this.isBiometricEnabled();
 
@@ -218,8 +244,18 @@ export const biometricService = {
 
       if (authResult.success) {
         const { userId, idToken, refreshToken } = await this.getBiometricUserInfo();
+        
         if (userId && idToken && refreshToken) {
-          return { success: true, userId, idToken, refreshToken };
+          // Check if idToken is expired on client side
+          const tokenStatus = isTokenExpired(idToken) ? 'expired' : 'valid';
+          
+          return { 
+            success: true, 
+            userId, 
+            idToken, 
+            refreshToken,
+            tokenStatus
+          };
         }
       }
 

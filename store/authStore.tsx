@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/auth';
+import { biometricService } from '../services/biometric';
 import { AuthState, User, SignUpRequest } from '../types/auth';
 
 const useAuthStore = create<AuthState>((set, get) => ({
@@ -53,6 +54,13 @@ const useAuthStore = create<AuthState>((set, get) => ({
 			await AsyncStorage.setItem('accessToken', response.token.accessToken);
 			await AsyncStorage.setItem('refreshToken', response.token.refreshToken);
 
+			// Update biometric tokens if biometric is enabled
+			await biometricService.updateBiometricTokens(
+				response.userId,
+				response.token.idToken,
+				response.token.refreshToken
+			);
+
 			set({ user: user, error: null });
 
 			return user;
@@ -90,10 +98,19 @@ const useAuthStore = create<AuthState>((set, get) => ({
 			set({ isLoading: true, error: null });
 
 			const response = await authService.refreshToken({ userId, refreshToken });
+
+			// Store updated tokens
 			await AsyncStorage.setItem('idToken', response.token.idToken);
 			await AsyncStorage.setItem('userId', response.userId);
 			await AsyncStorage.setItem('accessToken', response.token.accessToken);
 			await AsyncStorage.setItem('refreshToken', response.token.refreshToken);
+
+			// Update biometric tokens with new tokens
+			await biometricService.updateBiometricTokens(
+				response.userId,
+				response.token.idToken,
+				response.token.refreshToken
+			);
 
 			const user = {
 				userId: response.userId,
@@ -110,7 +127,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
 			return user;
 		} catch (error: any) {
-			const errMsg = error?.data?.message || error?.message || error || 'Token login failed';
+			const errMsg = error?.data?.message || error?.message || error || 'Token refresh failed';
 			set({ isLoading: false, error: errMsg });
 			throw error;
 		}
@@ -150,6 +167,10 @@ const useAuthStore = create<AuthState>((set, get) => ({
 	logout: async (): Promise<void> => {
 		try {
 			await AsyncStorage.removeItem('idToken');
+			await AsyncStorage.removeItem('userId');
+			await AsyncStorage.removeItem('accessToken');
+			await AsyncStorage.removeItem('refreshToken');
+
 			set({ user: null, error: null });
 		} catch (error: any) {
 			console.error('Failed to logout:', error);

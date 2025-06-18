@@ -60,7 +60,6 @@ export default {
         }
       ],
       "expo-localization",
-      "expo-secure-store",
       [
         "expo-build-properties",
         {
