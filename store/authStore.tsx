@@ -76,7 +76,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
 		try {
 			set({ isLoading: true, error: null });
 
-			const user = await authService.loginWithToken({ idToken });
+			const user = await authService.loginWithToken({ token: idToken });
 			await AsyncStorage.setItem('idToken', idToken);
 
 			if (user) {
@@ -103,13 +103,13 @@ const useAuthStore = create<AuthState>((set, get) => ({
 			await AsyncStorage.setItem('idToken', response.token.idToken);
 			await AsyncStorage.setItem('userId', response.userId);
 			await AsyncStorage.setItem('accessToken', response.token.accessToken);
-			await AsyncStorage.setItem('refreshToken', response.token.refreshToken);
+			await AsyncStorage.setItem('refreshToken', response.token.refreshToken || refreshToken);
 
 			// Update biometric tokens with new tokens
 			await biometricService.updateBiometricTokens(
 				response.userId,
 				response.token.idToken,
-				response.token.refreshToken
+				response.token.refreshToken || refreshToken
 			);
 
 			const user = {

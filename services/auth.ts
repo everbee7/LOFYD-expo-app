@@ -37,7 +37,7 @@ export const authService = {
 
   // Token Login
   async loginWithToken(tokenData: TokenLoginRequest): Promise<TokenLoginResponse> {
-    return apiRequest<TokenLoginResponse>('/auth/login/token', 'POST', tokenData);
+    return apiRequest<TokenLoginResponse>('/auth/validate-token', 'POST', tokenData);
   },
 
   // Refresh Token

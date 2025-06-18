@@ -140,6 +140,24 @@ export default function ProfileScreen() {
     }
   }, []);
 
+  // Check biometric status when component loads
+  useEffect(() => {
+    const checkBiometricStatus = async () => {
+      try {
+        const isBiometricEnabled = await biometricService.isBiometricEnabled();
+        setSettingsData(prev =>
+          prev.map(setting =>
+            setting.id === 'biometric' ? { ...setting, value: isBiometricEnabled } : setting
+          )
+        );
+      } catch (error) {
+        console.error('Error checking biometric status:', error);
+      }
+    };
+
+    checkBiometricStatus();
+  }, []);
+
   const styles = createStyles(theme);
 
   const tabs = [

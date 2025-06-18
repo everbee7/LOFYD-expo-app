@@ -54,7 +54,7 @@ export interface LoginResponse {
 }
 
 export interface TokenLoginRequest {
-  idToken: string;
+  token: string;
 }
 
 export interface TokenLoginResponse {
