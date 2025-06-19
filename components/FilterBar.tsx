@@ -3,28 +3,35 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 
+interface FilterItem {
+  type: string;
+  value: string;
+  displayText: string;
+  originalIndex: number;
+}
+
 interface FilterBarProps {
-  filters: string[];
-  onRemoveFilter: (filter: string, index: number) => void;
+  filters: FilterItem[];
+  onRemoveFilter: (filter: FilterItem, index: number) => void;
 }
 
 export default function FilterBar({ filters, onRemoveFilter }: FilterBarProps) {
   const { theme } = useTheme();
   const styles = createStyles(theme);
 
-  const renderFilterTag = ({ item, index }: { item: string, index: number }) => (
+  const renderFilterTag = ({ item, index }: { item: FilterItem, index: number }) => (
     <TouchableOpacity
       style={styles.filterTag}
       onPress={() => onRemoveFilter(item, index)}
     >
       <Text style={styles.filterTagText} numberOfLines={1} ellipsizeMode="tail">
-        {item}
+        {item.displayText}
       </Text>
-      <Ionicons 
-        name="close" 
-        size={theme.dimensions?.closeIconSize || 14} 
-        color={theme.colors.background} 
-        style={styles.filterTagClose} 
+      <Ionicons
+        name="close"
+        size={theme.dimensions?.closeIconSize || 14}
+        color={theme.colors.background}
+        style={styles.filterTagClose}
       />
     </TouchableOpacity>
   );
@@ -32,10 +39,10 @@ export default function FilterBar({ filters, onRemoveFilter }: FilterBarProps) {
   return (
     <View style={styles.filterContainer}>
       <TouchableOpacity style={styles.filterIconButton}>
-        <Ionicons 
-          name="options" 
-          size={20} 
-          color={theme.colors.text} 
+        <Ionicons
+          name="options"
+          size={20}
+          color={theme.colors.text}
         />
         {filters.length > 0 && (
           <View style={styles.filterBadge}>
@@ -49,7 +56,7 @@ export default function FilterBar({ filters, onRemoveFilter }: FilterBarProps) {
       <FlatList
         data={filters}
         renderItem={renderFilterTag}
-        keyExtractor={(item, index) => `${item}-${index}`}
+        keyExtractor={(item, index) => `${item.type}-${item.value}-${index}`}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filterList}
@@ -84,7 +91,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     justifyContent: 'center',
     borderRadius: theme.spacing.md,
     overflow: 'hidden',
-    backgroundColor: theme.colors.filterBadge,
+    backgroundColor: theme.colors.primary,
   },
   filterBadgeText: {
     ...theme.typography.badgeText,
@@ -100,9 +107,9 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     marginRight: theme.spacing.sm,
     borderWidth: 1,
-    backgroundColor: theme.colors.filterActive,
-    borderColor: theme.colors.filterActive,
-    maxWidth: 120, // Limit width to prevent very long filters
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+    maxWidth: 150, // Increased width to accommodate "Type: Value" format
   },
   filterTagText: {
     ...theme.typography.filterText,

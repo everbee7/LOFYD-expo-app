@@ -35,12 +35,6 @@ export const theme = {
     inputReadOnly: "#00625222",
     inputPlaceholder: '#999999', // Placeholder text
     inputFocusBorder: '#3b82f666',
-
-    // Filter colors
-    filterActive: '#2E7D5B', // Active filter background
-    filterInactive: '#ffffff', // Inactive filter background
-    filterBorder: '#e0e0e0', // Filter borders
-    filterBadge: '#2E7D5B', // Filter badge background
   },
 
   spacing: {

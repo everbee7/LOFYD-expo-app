@@ -32,7 +32,7 @@ export default function RestaurantItem({ restaurant, onPress }: RestaurantItemPr
           </Text>
           <Text style={styles.restaurantDistance}>{restaurant.distance}</Text>
         </View>
-        <Image source={{ uri: restaurant.image }} style={styles.restaurantImage} />
+        <Image source={restaurant.image ? { uri: restaurant.image } : require('../assets/images/default-location-rec.jpg')} style={styles.restaurantImage} />
       </View>
     </TouchableOpacity>
   );

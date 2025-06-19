@@ -1,86 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, FlatList, TextInput, Image, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, FlatList, TextInput, Image, Modal, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import useLocationStore from '@/store/locationStore';
 
 // Components
-import AddressInput from '../../components/AddressInput';
 import FilterBar from '../../components/FilterBar';
 import RestaurantItem from '../../components/RestaurantItem';
 
-// Mock data for restaurants with more details for filtering
-const mockRestaurants = [
-  {
-    id: '1',
-    name: "TJ's Seafood Market & Grill",
-    description: "It's hard to beat a lobster from TJ's.",
-    distance: '1 miles',
-    address: '123 Main St, New York, NY',
-    cuisine: ['Seafood', 'American'],
-    amenities: ['Bar', 'Outdoor Seating'],
-    image: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=300&h=200&fit=crop'
-  },
-  {
-    id: '2',
-    name: "Casa Miguel Mexican Restaurant",
-    description: "Authentic Mexican cuisine with fresh ingredients.",
-    distance: '2 miles',
-    address: '456 Broadway, New York, NY',
-    cuisine: ['Mexican', 'Latin'],
-    amenities: ['Bar', 'Night Life', 'Margarita'],
-    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300&h=200&fit=crop'
-  },
-  {
-    id: '3',
-    name: "The Night Owl Bar & Grill",
-    description: "Late night dining with live music.",
-    distance: '3 miles',
-    address: '789 5th Ave, New York, NY',
-    cuisine: ['American', 'Bar Food'],
-    amenities: ['Bar', 'Night Life', 'Live Music'],
-    image: 'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=300&h=200&fit=crop'
-  },
-  {
-    id: '4',
-    name: "La Cantina Mexican Grill",
-    description: "Family-owned Mexican restaurant.",
-    distance: '1.5 miles',
-    address: '321 Park Ave, New York, NY',
-    cuisine: ['Mexican', 'Tex-Mex'],
-    amenities: ['Mexican', 'Margarita', 'Family Friendly'],
-    image: 'https://images.unsplash.com/photo-1529417305485-480f906ac1db?w=300&h=200&fit=crop'
-  },
-  {
-    id: '5',
-    name: "Downtown Sports Bar",
-    description: "Watch the game while enjoying great food.",
-    distance: '2.5 miles',
-    address: '654 Madison Ave, New York, NY',
-    cuisine: ['American', 'Bar Food'],
-    amenities: ['Bar', 'Sports', 'Night Life'],
-    image: 'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=300&h=200&fit=crop'
-  },
-  {
-    id: '6',
-    name: "Sunset Seafood House",
-    description: "Fresh seafood with ocean views.",
-    distance: '4 miles',
-    address: '987 Ocean Blvd, Brooklyn, NY',
-    cuisine: ['Seafood', 'Fine Dining'],
-    amenities: ['Ocean View', 'Romantic'],
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&h=200&fit=crop'
-  },
-  {
-    id: '7',
-    name: "Tequila Sunrise Mexican Cantina",
-    description: "Vibrant atmosphere with authentic Mexican flavors.",
-    distance: '3.5 miles',
-    address: '147 Houston St, New York, NY',
-    cuisine: ['Mexican', 'Cantina'],
-    amenities: ['Mexican', 'Bar', 'Margarita', 'Night Life'],
-    image: 'https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?w=300&h=200&fit=crop'
-  }
-];
+// Filter item interface
+interface FilterItem {
+  type: string;
+  value: string;
+  displayText: string;
+  originalIndex: number;
+}
 
 // Mock saved filter sets
 const savedFilterSets = [
@@ -101,113 +35,199 @@ const savedFilterSets = [
   }
 ];
 
-// Mock address suggestions
-const mockAddresses = [
-  { id: '1', address: '123 Main St, New York, NY 10001' },
-  { id: '2', address: '456 Broadway, New York, NY 10013' },
-  { id: '3', address: '789 5th Ave, New York, NY 10022' },
-  { id: '4', address: '321 Park Ave, New York, NY 10010' },
-  { id: '5', address: '654 Madison Ave, New York, NY 10065' },
-];
-
 export default function DashboardScreen() {
   const { theme } = useTheme();
+  const {
+    specials,
+    isLoading,
+    error,
+    currentLocation,
+    radiusInMiles,
+    sortBy,
+    activeFilters,
+    pagination,
+    initialize,
+    searchWithCurrentParams,
+    loadMore,
+    setLocation,
+    setRadius,
+    setSortBy,
+    addFilter,
+    removeFilter: removeStoreFilter,
+    clearFilters,
+    clearError,
+    refreshSpecials
+  } = useLocationStore();
+
   const [activeTab, setActiveTab] = useState('Specials');
   const [searchText, setSearchText] = useState('');
-  const [filters, setFilters] = useState<string[]>(['Mexican', 'Bar', 'Night Life', 'Margarita']);
+  const [displayFilters, setDisplayFilters] = useState<FilterItem[]>([]);
   const [showSavedFilters, setShowSavedFilters] = useState(false);
-  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
-  const [filteredAddresses, setFilteredAddresses] = useState(mockAddresses);
-  const [filteredRestaurants, setFilteredRestaurants] = useState(mockRestaurants);
 
+  // Initialize location store on component mount
   useEffect(() => {
-    // Filter addresses based on search text
-    if (searchText.trim() === '') {
-      setFilteredAddresses(mockAddresses);
-      setShowAddressSuggestions(false);
-    } else {
-      const filtered = mockAddresses.filter(addr => 
-        addr.address.toLowerCase().includes(searchText.toLowerCase())
-      );
-      setFilteredAddresses(filtered);
-      setShowAddressSuggestions(true);
-    }
-  }, [searchText]);
+    initialize();
+  }, [initialize]);
 
-  // Filter restaurants based on active filters
+  // Convert active filters from the store to display format with types
   useEffect(() => {
-    if (filters.length === 0) {
-      setFilteredRestaurants(mockRestaurants);
-    } else {
-      const filtered = mockRestaurants.filter(restaurant => {
-        return filters.some(filter => {
-          // Check if filter matches cuisine
-          if (restaurant.cuisine.some(cuisine => 
-            cuisine.toLowerCase().includes(filter.toLowerCase())
-          )) {
-            return true;
-          }
-          
-          // Check if filter matches amenities
-          if (restaurant.amenities.some(amenity => 
-            amenity.toLowerCase().includes(filter.toLowerCase())
-          )) {
-            return true;
-          }
-          
-          // Check if filter matches address/location
-          if (restaurant.address.toLowerCase().includes(filter.toLowerCase())) {
-            return true;
-          }
-          
-          return false;
-        });
+    const filterItems: FilterItem[] = [];
+    let index = 0;
+
+    // Add service type filters
+    activeFilters.serviceType.forEach((serviceType) => {
+      filterItems.push({
+        type: 'serviceType',
+        value: serviceType,
+        displayText: `Service: ${serviceType}`,
+        originalIndex: index++
       });
-      setFilteredRestaurants(filtered);
-    }
-  }, [filters]);
+    });
+
+    // Add keyword filters
+    activeFilters.keywords.forEach((keyword) => {
+      filterItems.push({
+        type: 'keywords',
+        value: keyword,
+        displayText: `Keyword: ${keyword}`,
+        originalIndex: index++
+      });
+    });
+
+    // Add cuisine filters
+    activeFilters.cuisine.forEach((cuisine) => {
+      filterItems.push({
+        type: 'cuisine',
+        value: cuisine,
+        displayText: `Cuisine: ${cuisine}`,
+        originalIndex: index++
+      });
+    });
+
+    // Add experience filters
+    activeFilters.experience.forEach((experience) => {
+      filterItems.push({
+        type: 'experience',
+        value: experience,
+        displayText: `Experience: ${experience}`,
+        originalIndex: index++
+      });
+    });
+
+    // Add taste filters
+    activeFilters.taste.forEach((taste) => {
+      filterItems.push({
+        type: 'taste',
+        value: taste,
+        displayText: `Taste: ${taste}`,
+        originalIndex: index++
+      });
+    });
+
+    // Add price range filters
+    activeFilters.priceRange.forEach((price) => {
+      filterItems.push({
+        type: 'priceRange',
+        value: price.toString(),
+        displayText: `Price: $${price}`,
+        originalIndex: index++
+      });
+    });
+
+    setDisplayFilters(filterItems);
+  }, [activeFilters]);
 
   const styles = createStyles(theme);
 
-  const removeFilter = (filterToRemove: string, index: number) => {
-    setFilters(prev => prev.filter((_, i) => i !== index));
+  const handleRemoveFilter = (filterItem: FilterItem, index: number) => {
+    // Remove filter from store based on type
+    switch (filterItem.type) {
+      case 'serviceType':
+        removeStoreFilter('serviceType', filterItem.value);
+        break;
+      case 'keywords':
+        removeStoreFilter('keywords', filterItem.value);
+        break;
+      case 'cuisine':
+        removeStoreFilter('cuisine', filterItem.value);
+        break;
+      case 'experience':
+        removeStoreFilter('experience', filterItem.value);
+        break;
+      case 'taste':
+        removeStoreFilter('taste', filterItem.value);
+        break;
+      case 'priceRange':
+        removeStoreFilter('priceRange', parseInt(filterItem.value));
+        break;
+      default:
+        // Fallback for unknown filter types
+        removeStoreFilter('keywords', filterItem.value);
+        break;
+    }
   };
 
-  const addFilter = (newFilter: string) => {
+  const addNewFilter = (newFilter: any) => {
     const trimmedFilter = newFilter.trim();
-    if (trimmedFilter && !filters.includes(trimmedFilter)) {
-      setFilters(prev => [...prev, trimmedFilter]);
+    if (trimmedFilter) {
+      // Check if filter already exists (checking all filter types)
+      const filterExists = displayFilters.some(filter => 
+        filter.value.toLowerCase() === trimmedFilter.toLowerCase()
+      );
+      
+      if (!filterExists) {
+        // Add as keyword filter by default
+        addFilter('keywords', trimmedFilter);
+      }
     }
   };
 
   const applySavedFilterSet = (filterSet: any) => {
-    setFilters(filterSet.filters);
+    clearFilters();
+    filterSet.filters.forEach((filter: any) => {
+      addFilter('keywords', filter);
+    });
     setShowSavedFilters(false);
-  };
-
-  const selectAddress = (address: string) => {
-    setSearchText(address);
-    setShowAddressSuggestions(false);
-    // Add address as a location filter
-    const locationName = address.split(',')[0].trim(); // Get first part of address
-    addFilter(`Location: ${locationName}`);
+    searchWithCurrentParams();
   };
 
   const handleSearchSubmit = () => {
     if (searchText.trim()) {
-      // Add search text as a filter
-      addFilter(searchText.trim());
-      setSearchText('');
-      setShowAddressSuggestions(false);
+      setLocation(searchText.trim(), 'locale');
+      searchWithCurrentParams();
     }
   };
 
-  const handleSearchTextChange = (text: string) => {
+  const handleSearchTextChange = (text: any) => {
     setSearchText(text);
   };
 
-  const renderRestaurantItem = ({ item }: { item: any }) => (
-    <RestaurantItem restaurant={item} />
+  const handleLoadMore = () => {
+    if (!isLoading && pagination.offset + pagination.limit < pagination.totalSize) {
+      loadMore();
+    }
+  };
+
+  const handleRefresh = () => {
+    refreshSpecials();
+  };
+
+  // Convert Special objects to format expected by RestaurantItem
+  const convertSpecialToRestaurant = (special: any) => ({
+    id: special.id,
+    name: special.title,
+    description: special.description,
+    distance: `${special.distFromInMiles?.toFixed(1)} miles`,
+    address: special.neighborhood || 'Location not specified',
+    cuisine: special.cuisine || [],
+    amenities: [...(special.experience || []), ...(special.taste || [])],
+    image: special.images?.[0] || '',
+    priceRange: special.priceRange,
+    serviceType: special.serviceType || []
+  });
+
+  const renderSpecialItem = ({ item }: { item: any }) => (
+    <RestaurantItem restaurant={convertSpecialToRestaurant(item)} />
   );
 
   const renderSavedFilterSet = ({ item }: { item: any }) => (
@@ -257,50 +277,110 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.filterButton}
             onPress={() => setShowSavedFilters(true)}
           >
             <Text style={styles.filterButtonText}>Apply Saved Filters</Text>
-            <Ionicons 
-              name="chevron-down" 
-              size={theme.dimensions?.chevronIconSize || 16} 
-              color={theme.colors.textSecondary} 
+            <Ionicons
+              name="chevron-down"
+              size={theme.dimensions?.chevronIconSize || 16}
+              color={theme.colors.textSecondary}
             />
           </TouchableOpacity>
         </View>
 
         {/* Search Bar */}
-        <AddressInput
-          searchText={searchText}
-          onSearchTextChange={handleSearchTextChange}
-          onSearchSubmit={handleSearchSubmit}
-          onSelectAddress={selectAddress}
-          showSuggestions={showAddressSuggestions}
-          onShowSuggestionsChange={setShowAddressSuggestions}
-          addresses={filteredAddresses}
-        />
+        <View style={styles.searchContainer}>
+          <View style={styles.searchInputContainer}>
+            <Ionicons
+              name="search"
+              size={theme.dimensions?.searchIconSize || 20}
+              color={theme.colors.textSecondary}
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Enter location (city, postal code, coordinates)"
+              placeholderTextColor={theme.colors.textLight}
+              value={searchText}
+              onChangeText={handleSearchTextChange}
+              onSubmitEditing={handleSearchSubmit}
+              returnKeyType="search"
+            />
+            {searchText.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSearchText('')}
+                style={styles.clearButton}
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={theme.dimensions?.closeIconSize || 20}
+                  color={theme.colors.textSecondary}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
 
         {/* Filter Tags */}
         <FilterBar
-          filters={filters}
-          onRemoveFilter={removeFilter}
+          filters={displayFilters}
+          onRemoveFilter={handleRemoveFilter}
         />
+
+        {/* Location Info Bar */}
+        <View style={styles.locationInfo}>
+          <Text style={styles.locationText}>
+            📍 {currentLocation} • {radiusInMiles} miles • Sort: {sortBy}
+          </Text>
+          <Text style={styles.resultsText}>
+            {pagination.totalSize} specials found
+          </Text>
+        </View>
       </View>
 
-      {/* Restaurant List */}
+      {/* Error Display */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity onPress={clearError} style={styles.errorDismiss}>
+            <Text style={styles.errorDismissText}>Dismiss</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Specials List */}
       <FlatList
-        data={filteredRestaurants}
-        renderItem={renderRestaurantItem}
+        data={specials}
+        renderItem={renderSpecialItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
         style={styles.listContainer}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={handleRefresh} />
+        }
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.1}
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No restaurants found matching your filters</Text>
-            <Text style={styles.emptySubtext}>Try adjusting your search criteria</Text>
+            {isLoading ? (
+              <Text style={styles.emptyText}>Loading specials...</Text>
+            ) : (
+              <>
+                <Text style={styles.emptyText}>No specials found in your area</Text>
+                <Text style={styles.emptySubtext}>Try adjusting your location or filters</Text>
+              </>
+            )}
           </View>
+        )}
+        ListFooterComponent={() => (
+          isLoading && specials.length > 0 ? (
+            <View style={styles.loadingFooter}>
+              <Text style={styles.loadingText}>Loading more...</Text>
+            </View>
+          ) : null
         )}
       />
 
@@ -311,7 +391,7 @@ export default function DashboardScreen() {
         animationType="fade"
         onRequestClose={() => setShowSavedFilters(false)}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
           onPress={() => setShowSavedFilters(false)}
@@ -383,12 +463,85 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.text,
     marginRight: theme.spacing.xs,
   },
+  searchContainer: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius?.md || 8,
+    paddingHorizontal: theme.spacing.md,
+    height: 48,
+  },
+  searchIcon: {
+    marginRight: theme.spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    ...theme.typography.body,
+    color: theme.colors.text,
+    height: '100%',
+  },
+  clearButton: {
+    marginLeft: theme.spacing.sm,
+    padding: theme.spacing.xs,
+  },
+  locationInfo: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.backgroundSecondary || theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
+  locationText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.textSecondary,
+  },
+  resultsText: {
+    ...theme.typography.caption,
+    color: theme.colors.textLight,
+    marginTop: 2,
+  },
+  errorContainer: {
+    backgroundColor: theme.colors.error || '#ff6b6b',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  errorText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.background,
+    flex: 1,
+  },
+  errorDismiss: {
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  errorDismissText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.background,
+    fontWeight: '600',
+  },
   listContainer: {
     flex: 1,
     backgroundColor: theme.colors.background,
   },
   contentContainer: {
     padding: theme.spacing.lg,
+  },
+  loadingFooter: {
+    paddingVertical: theme.spacing.lg,
+    alignItems: 'center',
+  },
+  loadingText: {
+    ...theme.typography.bodySmall,
+    color: theme.colors.textSecondary,
   },
   // Modal styles
   modalOverlay: {
