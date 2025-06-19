@@ -10,6 +10,11 @@
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
+      "autoIncrement": true,
+      "ios": {
+        "enterpriseProvisioning": "adhoc"
+      },      
       "android": {
         "buildType": "apk"
       }

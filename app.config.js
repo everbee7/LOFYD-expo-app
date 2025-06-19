@@ -79,12 +79,19 @@ export default {
     },
     extra: {
       eas: {
-        projectId: "0ed46fb4-8b52-4450-84c0-ef27e18e6778"
+        "projectId": "4378c182-70a8-4632-9c8e-b74c02172842"
       },
       API_URL: process.env.EXPO_PUBLIC_API_URL,
       AWS_REGION: process.env.EXPO_PUBLIC_AWS_REGION,
       MIN_VERIFICATION_COUNT: process.env.EXPO_PUBLIC_MIN_VERIFICATION_COUNT,
       ENVIRONMENT: process.env.EXPO_PUBLIC_ENVIRONMENT,
+    },
+    owner: "cgastin",
+    updates: {
+      url: "https://u.expo.dev/4378c182-70a8-4632-9c8e-b74c02172842"
+    },
+    runtimeVersion: {
+      policy: "appVersion"
     }
   }
 };
