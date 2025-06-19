@@ -18,25 +18,14 @@ const BiometricLoginPrompt: React.FC<BiometricLoginPromptProps> = ({
 }) => {
   const { theme } = useTheme();
   const { loginWithToken, refreshToken } = useAuthStore();
-  const [biometricType, setBiometricType] = useState<string>('Biometric');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const styles = createStyles(theme);
 
   useEffect(() => {
-    loadBiometricType();
     // Auto-prompt for biometric authentication when component mounts
     handleBiometricLogin();
   }, []);
-
-  const loadBiometricType = async () => {
-    try {
-      const capabilities = await biometricService.checkCapabilities();
-      setBiometricType(capabilities.biometricType);
-    } catch (error) {
-      console.error('Error loading biometric type:', error);
-    }
-  };
 
   const handleBiometricLogin = async () => {
     if (isAuthenticating) return;
@@ -94,35 +83,28 @@ const BiometricLoginPrompt: React.FC<BiometricLoginPromptProps> = ({
     }
   };
 
-  const getIcon = () => {
-    if (biometricType === 'Face ID' || biometricType === 'Face Recognition') {
-      return 'scan-outline';
-    }
-    return 'finger-print-outline';
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        {/* Biometric Icon */}
+        {/* Biometric Icon - Generic biometric icon */}
         <View style={styles.iconContainer}>
           <Ionicons
-            name={getIcon()}
+            name="finger-print-outline"
             size={80}
             color={theme.colors.primary}
           />
         </View>
 
-        {/* Title */}
+        {/* Title - Generic biometric title */}
         <Text style={styles.title}>
-          {isAuthenticating ? 'Authenticating...' : `Login with ${biometricType}`}
+          {isAuthenticating ? 'Authenticating...' : 'Login with Biometric'}
         </Text>
 
-        {/* Subtitle */}
+        {/* Subtitle - Generic biometric message */}
         <Text style={styles.subtitle}>
           {isAuthenticating
             ? 'Please authenticate to continue'
-            : `Touch the ${biometricType.toLowerCase()} sensor to sign in`
+            : 'Use your fingerprint, face recognition, or other biometric method to sign in'
           }
         </Text>
 

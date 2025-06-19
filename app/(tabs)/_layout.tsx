@@ -1,7 +1,7 @@
 import React from "react";
 import { Tabs } from 'expo-router';
 import { FontAwesome5, Ionicons, AntDesign } from '@expo/vector-icons';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const TabIcon = ({ 
@@ -59,8 +59,8 @@ export default function TabLayout() {
           borderTopColor: theme.colors.border,
           display: 'flex',
           alignItems: 'center',
-          paddingTop: 20,
-          height: 80,
+          paddingTop: 10,
+          height: 80 + (Platform.OS === 'ios' ? 10 : 0),
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -130,8 +130,8 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   iconContainer: {
-    width: 48,
-    height: 48,
+    width: 36,
+    height: 36,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',

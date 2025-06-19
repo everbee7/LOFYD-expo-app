@@ -34,20 +34,8 @@ export const biometricService = {
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
       const supportedTypes = await LocalAuthentication.supportedAuthenticationTypesAsync();
 
-      let biometricType = 'Biometric';
-      if (Platform.OS === 'ios') {
-        if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-          biometricType = 'Face ID';
-        } else if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-          biometricType = 'Touch ID';
-        }
-      } else {
-        if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-          biometricType = 'Face Recognition';
-        } else if (supportedTypes.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-          biometricType = 'Fingerprint';
-        }
-      }
+      // Always use generic "Biometric" term - no need to be specific
+      const biometricType = 'Biometric';
 
       return {
         isAvailable,
@@ -69,10 +57,8 @@ export const biometricService = {
   // Authenticate user with biometric
   async authenticate(promptMessage?: string): Promise<LocalAuthentication.LocalAuthenticationResult> {
     try {
-      const capabilities = await this.checkCapabilities();
-
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: promptMessage || `Authenticate with ${capabilities.biometricType}`,
+        promptMessage: promptMessage || 'Authenticate with biometric',
         cancelLabel: 'Cancel',
         fallbackLabel: 'Use Password',
         disableDeviceFallback: false, // Allow device fallback (PIN/Pattern on Android)
@@ -107,19 +93,16 @@ export const biometricService = {
       if (!capabilities.isEnrolled) {
         Alert.alert(
           'No Biometric Data',
-          `Please set up ${capabilities.biometricType} in your device settings first.`,
+          'Please set up biometric authentication in your device settings first.',
           [
             { text: 'Cancel' },
             {
               text: 'Settings',
               onPress: () => {
-                if (Platform.OS === 'ios') {
-                  // iOS users need to go to Settings manually
-                  Alert.alert('Setup Instructions', 'Go to Settings > Face ID & Passcode or Touch ID & Passcode to set up biometric authentication.');
-                } else {
-                  // Android - could potentially open settings
-                  Alert.alert('Setup Instructions', 'Go to Settings > Security > Fingerprint or Face unlock to set up biometric authentication.');
-                }
+                Alert.alert(
+                  'Setup Instructions', 
+                  'Go to your device Settings and set up biometric authentication (fingerprint, face recognition, etc.) to use this feature.'
+                );
               }
             }
           ]
@@ -128,9 +111,7 @@ export const biometricService = {
       }
 
       // Authenticate to confirm setup
-      const authResult = await this.authenticate(
-        `Authenticate to enable ${capabilities.biometricType} login`
-      );
+      const authResult = await this.authenticate('Authenticate to enable biometric login');
 
       if (authResult.success) {
         // Save biometric preference and user token using AsyncStorage
@@ -141,7 +122,7 @@ export const biometricService = {
 
         Alert.alert(
           'Biometric Enabled',
-          `${capabilities.biometricType} login has been enabled for your account.`,
+          'Biometric login has been enabled for your account.',
           [{ text: 'OK' }]
         );
 
@@ -237,10 +218,7 @@ export const biometricService = {
         return { success: false };
       }
 
-      const capabilities = await this.checkCapabilities();
-      const authResult = await this.authenticate(
-        `Login with ${capabilities.biometricType}`
-      );
+      const authResult = await this.authenticate('Login with biometric');
 
       if (authResult.success) {
         const { userId, idToken, refreshToken } = await this.getBiometricUserInfo();
