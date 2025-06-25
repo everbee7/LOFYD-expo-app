@@ -5,7 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  ScrollView
+  ScrollView,
+  StatusBar
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -78,7 +79,7 @@ export default function ProfileScreen() {
     {
       id: 'email',
       title: 'Email Notifications',
-      subtitle: 'Receive email updates about restaurants and offers',
+      subtitle: 'Receive email updates about locations and offers',
       type: 'toggle',
       value: false,
       icon: 'mail-outline'
@@ -302,9 +303,9 @@ const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
+    paddingTop: StatusBar.currentHeight || 0,
   },
   header: {
-    paddingTop: theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,
     paddingBottom: theme.spacing.md,
   },
@@ -315,7 +316,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   backText: {
     color: theme.colors.primary,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '400',
     marginLeft: theme.spacing.xs,
   },

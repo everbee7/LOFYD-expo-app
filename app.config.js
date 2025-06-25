@@ -18,7 +18,8 @@ export default {
         NSAppTransportSecurity: {
           NSAllowsArbitraryLoads: true
         },
-        "UIBackgroundModes": ["fetch", "remote-notification"]
+        "UIBackgroundModes": ["fetch", "remote-notification"],
+        "NSFaceIDUsageDescription": "This app uses Face ID for secure authentication."
       }
     },
     android: {

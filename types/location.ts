@@ -3,6 +3,39 @@ export interface Coordinates {
   longitude: number;
 }
 
+export type LocationType = 'locale' | 'postal' | 'coords';
+export type ServiceType = 'dine-in' | 'take-out' | 'delivery';
+export type SortType = 'relevance' | 'distance' | 'favorites';
+
+export interface DailyHours {
+  day: string;
+  isClosed: boolean;
+  open: string;
+  close: string;
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  description: string;
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  phone: string;
+  coordinates: Coordinates;
+  distFromInMiles: number;
+  locationHours: DailyHours[];
+  serviceType: string[];
+  experience: string[];
+  cuisine: string[];
+  taste: string[];
+  priceRange: number;
+  images: string[];
+  timezone: string;
+  neighborhood: string;
+}
+
 export interface Special {
   id: string;
   title: string;
@@ -25,10 +58,10 @@ export interface Special {
 
 export interface GetSpecialsRequest {
   location: string;
-  locationType: 'locale' | 'postal' | 'coords';
+  locationType: LocationType;
   radiusInMiles: number;
-  sortBy: 'relevance' | 'distance' | 'favorites';
-  serviceType?: ('dine-in' | 'take-out' | 'delivery')[];
+  sortBy: SortType;
+  serviceType?: ServiceType[];
   offset?: number;
   limit?: number;
   keywords?: string[];
@@ -45,55 +78,111 @@ export interface GetSpecialsResponse {
   totalSize: number;
 }
 
-export interface LocationState {
-  specials: Special[];
-  currentSpecial: Special | null;
-  isLoading: boolean;
-  error: string | null;
-  
-  // Location search parameters
-  currentLocation: string;
-  locationType: 'locale' | 'postal' | 'coords';
+export interface GetLocationsRequest {
+  location: string;
+  locationType: LocationType;
   radiusInMiles: number;
-  sortBy: 'relevance' | 'distance' | 'favorites';
-  
-  // Filters
+  sortBy: SortType;
+  serviceType?: ServiceType[];
+  offset?: number;
+  limit?: number;
+}
+
+export interface GetLocationsResponse {
+  locations: Location[];
+  offset: number;
+  limit: number;
+  totalSize: number;
+}
+
+export interface FilterSetting {
+  id: string;
+  name: string;
+  timestamp: number;
+  activeTab: 'Specials' | 'Locations';
+  searchLocation: string;
+  radiusInMiles: number;
+  sortBy: SortType;
   activeFilters: {
-    serviceType: ('dine-in' | 'take-out' | 'delivery')[];
+    serviceType: ServiceType[];
     keywords: string[];
     priceRange: number[];
     experience: string[];
     cuisine: string[];
     taste: string[];
   };
-  
+}
+
+export interface LocationState {
+  // Data
+  specials: Special[];
+  locations: Location[];
+  currentSpecial: Special | null;
+  currentLocation: Location | null;
+  isLoading: boolean;
+  error: string | null;
+
+  // Search parameters
+  searchLocation: string;
+  locationType: LocationType;
+  radiusInMiles: number;
+  sortBy: SortType;
+
+  // Active tab
+  activeTab: 'Specials' | 'Locations';
+
+  // Filters
+  activeFilters: {
+    serviceType: ServiceType[];
+    keywords: string[];
+    priceRange: number[];
+    experience: string[];
+    cuisine: string[];
+    taste: string[];
+  };
+
+  // Filter Settings Log
+  filterSettingLog: FilterSetting[];
+
   // Pagination
   pagination: {
     offset: number;
     limit: number;
     totalSize: number;
   };
-  
+
   // Core methods
   initialize: () => Promise<void>;
   getSpecials: (params: GetSpecialsRequest) => Promise<GetSpecialsResponse>;
+  getLocations: (params: GetLocationsRequest) => Promise<GetLocationsResponse>;
   getSpecialById: (id: string) => Promise<Special>;
+  getLocationById: (id: string) => Promise<Location>;
   loadMore: () => Promise<void>;
-  
+
+  // Tab methods
+  setActiveTab: (tab: 'Specials' | 'Locations') => void;
+
   // Filter methods
-  setLocation: (location: string, locationType: 'locale' | 'postal' | 'coords') => void;
+  setLocation: (location: string, locationType: LocationType) => void;
   setRadius: (radius: number) => void;
-  setSortBy: (sortBy: 'relevance' | 'distance' | 'favorites') => void;
+  setSortBy: (sortBy: SortType) => void;
   setFilters: (filters: Partial<LocationState['activeFilters']>) => void;
   addFilter: (filterType: keyof LocationState['activeFilters'], value: string | number) => void;
   removeFilter: (filterType: keyof LocationState['activeFilters'], value: string | number) => void;
   clearFilters: () => void;
-  
+
   // Search methods
   searchWithCurrentParams: () => Promise<void>;
-  refreshSpecials: () => Promise<void>;
-  
+  refreshData: () => Promise<void>;
+
+  // New methods for filter settings
+  saveCurrentFilterSetting: (name: string) => void;
+  applySavedFilterSetting: (settingId: string) => void;
+  deleteFilterSetting: (settingId: string) => void;
+  clearFilterSettingLog: () => void;
+
   // Utility methods
   clearError: () => void;
   setCurrentSpecial: (special: Special | null) => void;
+  setCurrentLocation: (location: Location | null) => void;
 }

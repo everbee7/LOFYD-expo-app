@@ -3,9 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform } from 'react-native';
 
 const BIOMETRIC_ENABLED_KEY = 'biometricEnabled';
-const BIOMETRIC_USER_ID = 'biometricUserId';
-const BIOMETRIC_USER_TOKEN_KEY = 'biometricUserToken';
-const BIOMETRIC_USER_REFRESH_TOKEN_KEY = 'biometricUserRefreshToken';
+const BIOMETRIC_USER_ID = 'userId';
+const BIOMETRIC_USER_TOKEN_KEY = 'idToken';
+const BIOMETRIC_USER_REFRESH_TOKEN_KEY = 'refreshToken';
 
 export interface BiometricCapabilities {
   isAvailable: boolean;

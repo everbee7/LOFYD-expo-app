@@ -65,7 +65,7 @@ export default function LoginScreen() {
       console.error('Login error:', error);
       Alert.alert(
         'Login Failed',
-        error?.data?.message || error?.message || 'Invalid email or password',
+        (typeof error === 'string' ? error : error?.data?.message || error?.message || 'Invalid email or password'),
         [{ text: 'OK' }]
       );
     } finally {

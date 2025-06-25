@@ -82,7 +82,6 @@ export interface RefreshTokenResponse {
     accessToken: string;
     expiresAt: string;
     idToken: string;
-    refreshToken: string;
     tokenType: string;
   }
 }

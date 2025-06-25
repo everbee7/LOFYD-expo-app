@@ -12,10 +12,11 @@ interface FilterItem {
 
 interface FilterBarProps {
   filters: FilterItem[];
+  onFilterPress?: () => void;
   onRemoveFilter: (filter: FilterItem, index: number) => void;
 }
 
-export default function FilterBar({ filters, onRemoveFilter }: FilterBarProps) {
+export default function FilterBar({ filters, onFilterPress, onRemoveFilter }: FilterBarProps) {
   const { theme } = useTheme();
   const styles = createStyles(theme);
 
@@ -36,9 +37,15 @@ export default function FilterBar({ filters, onRemoveFilter }: FilterBarProps) {
     </TouchableOpacity>
   );
 
+  const handleFilterPress = () => {
+    if (onFilterPress) {
+      onFilterPress();
+    }
+  }
+
   return (
     <View style={styles.filterContainer}>
-      <TouchableOpacity style={styles.filterIconButton}>
+      <TouchableOpacity style={styles.filterIconButton} onPress={handleFilterPress}>
         <Ionicons
           name="options"
           size={20}
@@ -71,6 +78,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingVertical: theme.spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: theme.spacing.sm,
   },
   filterIconButton: {
     position: 'relative',
@@ -98,7 +106,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.background,
   },
   filterList: {
-    paddingLeft: theme.spacing.sm,
   },
   filterTag: {
     flexDirection: 'row',

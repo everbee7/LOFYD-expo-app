@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, FlatList, TextInput, Image, Modal, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, FlatList, TextInput, Image, Modal, RefreshControl, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import useLocationStore from '@/store/locationStore';
+import { locationService } from '@/services/location';
+import { useDebounce } from '@/hooks/useDebounce';
 
 // Components
 import FilterBar from '../../components/FilterBar';
-import RestaurantItem from '../../components/RestaurantItem';
+import LocationItem from '../../components/LocationItem';
+import FilterModal from '../../components/dshboard/FilterModal';
+import AppliedFiltersModal from '../../components/dshboard/AppliedFiltersModal';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Filter item interface
 interface FilterItem {
@@ -16,58 +21,74 @@ interface FilterItem {
   originalIndex: number;
 }
 
-// Mock saved filter sets
-const savedFilterSets = [
-  {
-    id: '1',
-    name: 'My Favorites',
-    filters: ['Mexican', 'Bar', 'Night Life']
-  },
-  {
-    id: '2',
-    name: 'Casual Dining',
-    filters: ['Bar', 'Seafood', 'Family Friendly']
-  },
-  {
-    id: '3',
-    name: 'Date Night',
-    filters: ['Fine Dining', 'Romantic', 'Wine Bar']
-  }
-];
-
 export default function DashboardScreen() {
   const { theme } = useTheme();
   const {
     specials,
+    locations,
     isLoading,
     error,
-    currentLocation,
+    searchLocation,
     radiusInMiles,
     sortBy,
     activeFilters,
+    activeTab,
     pagination,
+    filterSettingLog,
     initialize,
     searchWithCurrentParams,
     loadMore,
     setLocation,
-    setRadius,
-    setSortBy,
-    addFilter,
+    setActiveTab,
     removeFilter: removeStoreFilter,
-    clearFilters,
     clearError,
-    refreshSpecials
+    refreshData
   } = useLocationStore();
 
-  const [activeTab, setActiveTab] = useState('Specials');
   const [searchText, setSearchText] = useState('');
   const [displayFilters, setDisplayFilters] = useState<FilterItem[]>([]);
-  const [showSavedFilters, setShowSavedFilters] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showAppliedFiltersModal, setShowAppliedFiltersModal] = useState(false);
 
   // Initialize location store on component mount
+  useFocusEffect(
+    useCallback(() => {
+      initialize();
+    }, [initialize])
+  );
+
+  // Initialize search text with current location and watch for changes
   useEffect(() => {
-    initialize();
-  }, [initialize]);
+    setSearchText(searchLocation);
+  }, [searchLocation]);
+
+  // Watch for filter changes and trigger search
+  useEffect(() => {
+    if (activeFilters) {
+      // Only search if we're not in the initial loading state
+      if (searchLocation && searchLocation !== 'New York, NY') {
+        searchWithCurrentParams();
+      }
+      console.log('activeFilters', activeFilters);
+    }
+  }, [activeFilters, activeTab]);
+
+  // Debounced search function
+  const debouncedSearch = useDebounce((text: string) => {
+    if (text.trim()) {
+      const locationType = locationService.determineLocationType(text.trim());
+      setLocation(text.trim(), locationType);
+      searchWithCurrentParams();
+    }
+  }, 500);
+
+  // Handle search text changes with debounce
+  const handleSearchTextChange = (text: string) => {
+    setSearchText(text);
+    if (text.trim() !== searchLocation) {
+      debouncedSearch(text);
+    }
+  };
 
   // Convert active filters from the store to display format with types
   useEffect(() => {
@@ -129,7 +150,7 @@ export default function DashboardScreen() {
       filterItems.push({
         type: 'priceRange',
         value: price.toString(),
-        displayText: `Price: $${price}`,
+        displayText: `Price: ${'$'.repeat(price)}`,
         originalIndex: index++
       });
     });
@@ -167,39 +188,12 @@ export default function DashboardScreen() {
     }
   };
 
-  const addNewFilter = (newFilter: any) => {
-    const trimmedFilter = newFilter.trim();
-    if (trimmedFilter) {
-      // Check if filter already exists (checking all filter types)
-      const filterExists = displayFilters.some(filter => 
-        filter.value.toLowerCase() === trimmedFilter.toLowerCase()
-      );
-      
-      if (!filterExists) {
-        // Add as keyword filter by default
-        addFilter('keywords', trimmedFilter);
-      }
-    }
-  };
-
-  const applySavedFilterSet = (filterSet: any) => {
-    clearFilters();
-    filterSet.filters.forEach((filter: any) => {
-      addFilter('keywords', filter);
-    });
-    setShowSavedFilters(false);
-    searchWithCurrentParams();
-  };
-
   const handleSearchSubmit = () => {
     if (searchText.trim()) {
-      setLocation(searchText.trim(), 'locale');
+      const locationType = locationService.determineLocationType(searchText.trim());
+      setLocation(searchText.trim(), locationType);
       searchWithCurrentParams();
     }
-  };
-
-  const handleSearchTextChange = (text: any) => {
-    setSearchText(text);
   };
 
   const handleLoadMore = () => {
@@ -209,12 +203,16 @@ export default function DashboardScreen() {
   };
 
   const handleRefresh = () => {
-    refreshSpecials();
+    refreshData();
   };
 
-  // Convert Special objects to format expected by RestaurantItem
-  const convertSpecialToRestaurant = (special: any) => ({
-    id: special.id,
+  const handleTabChange = (tab: 'Specials' | 'Locations') => {
+    setActiveTab(tab);
+  };
+
+  // Convert Special objects to format expected by LocationItem
+  const convertSpecialToLocation = (special: any) => ({
+    id: special.locationId,
     name: special.title,
     description: special.description,
     distance: `${special.distFromInMiles?.toFixed(1)} miles`,
@@ -226,19 +224,34 @@ export default function DashboardScreen() {
     serviceType: special.serviceType || []
   });
 
+  // Convert Location objects to format expected by LocationItem
+  const convertLocationToLocation = (location: any) => ({
+    id: location.id,
+    name: location.name,
+    description: location.description,
+    distance: `${location.distFromInMiles?.toFixed(1)} miles`,
+    address: `${location.street}, ${location.city}, ${location.state}`,
+    cuisine: location.cuisine || [],
+    amenities: [...(location.experience || []), ...(location.taste || [])],
+    image: location.images?.[0] || '',
+    priceRange: location.priceRange,
+    serviceType: location.serviceType || []
+  });
+
   const renderSpecialItem = ({ item }: { item: any }) => (
-    <RestaurantItem restaurant={convertSpecialToRestaurant(item)} />
+    <LocationItem location={convertSpecialToLocation(item)} />
   );
 
-  const renderSavedFilterSet = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={styles.savedFilterItem}
-      onPress={() => applySavedFilterSet(item)}
-    >
-      <Text style={styles.savedFilterName}>{item.name}</Text>
-      <Text style={styles.savedFilterPreview}>{item.filters.join(', ')}</Text>
-    </TouchableOpacity>
+  const renderLocationItem = ({ item }: { item: any }) => (
+    <LocationItem location={convertLocationToLocation(item)} />
   );
+
+  // Get current data based on active tab
+  const currentData = activeTab === 'Specials' ? specials : locations;
+  const currentRenderItem = activeTab === 'Specials' ? renderSpecialItem : renderLocationItem;
+  const emptyText = activeTab === 'Specials' ? 'No specials found in your area' : 'No locations found in your area';
+  const loadingText = activeTab === 'Specials' ? 'Loading specials...' : 'Loading locations...';
+  const resultsText = `${pagination?.totalSize || 0} ${activeTab.toLowerCase()} found`;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -252,7 +265,7 @@ export default function DashboardScreen() {
                 styles.tab,
                 activeTab === 'Specials' && styles.activeTab
               ]}
-              onPress={() => setActiveTab('Specials')}
+              onPress={() => handleTabChange('Specials')}
             >
               <Text style={[
                 styles.tabText,
@@ -266,7 +279,7 @@ export default function DashboardScreen() {
                 styles.tab,
                 activeTab === 'Locations' && styles.activeTab
               ]}
-              onPress={() => setActiveTab('Locations')}
+              onPress={() => handleTabChange('Locations')}
             >
               <Text style={[
                 styles.tabText,
@@ -277,17 +290,26 @@ export default function DashboardScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => setShowSavedFilters(true)}
-          >
-            <Text style={styles.filterButtonText}>Apply Saved Filters</Text>
-            <Ionicons
-              name="chevron-down"
-              size={theme.dimensions?.chevronIconSize || 16}
-              color={theme.colors.textSecondary}
-            />
-          </TouchableOpacity>
+          {/* Filter buttons */}
+          <View style={styles.filterButtonsContainer}>
+            {/* Apply Saved Filters */}
+            <TouchableOpacity
+              style={styles.filterButton}
+              onPress={() => setShowAppliedFiltersModal(true)}
+            >
+              {/* Saved Filters Button */}
+              {filterSettingLog.length > 0 && (
+                <Text style={styles.savedFilterBadge}>{filterSettingLog.length}</Text>
+              )}
+
+              <Ionicons
+                name="bookmark"
+                size={16}
+                color={theme.colors.primary}
+              />
+              <Text style={styles.filterButtonText}>Apply Saved Filters</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Search Bar */}
@@ -326,16 +348,25 @@ export default function DashboardScreen() {
         {/* Filter Tags */}
         <FilterBar
           filters={displayFilters}
+          onFilterPress={() => setShowFilterModal(true)}
           onRemoveFilter={handleRemoveFilter}
         />
 
         {/* Location Info Bar */}
         <View style={styles.locationInfo}>
-          <Text style={styles.locationText}>
-            📍 {currentLocation} • {radiusInMiles} miles • Sort: {sortBy}
-          </Text>
+          <View style={styles.locationHead}>
+            <Ionicons
+              name="location-sharp"
+              size={16}
+              color={theme.colors.textSecondary}
+              style={styles.locationIcon}
+            />
+            <Text style={styles.locationText}>
+              {searchLocation} • {radiusInMiles} miles • Sort: {sortBy}
+            </Text>
+          </View>
           <Text style={styles.resultsText}>
-            {pagination.totalSize} specials found
+            {resultsText}
           </Text>
         </View>
       </View>
@@ -350,10 +381,10 @@ export default function DashboardScreen() {
         </View>
       )}
 
-      {/* Specials List */}
+      {/* Data List */}
       <FlatList
-        data={specials}
-        renderItem={renderSpecialItem}
+        data={currentData}
+        renderItem={currentRenderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -366,17 +397,17 @@ export default function DashboardScreen() {
         ListEmptyComponent={() => (
           <View style={styles.emptyContainer}>
             {isLoading ? (
-              <Text style={styles.emptyText}>Loading specials...</Text>
+              <Text style={styles.emptyText}>{loadingText}</Text>
             ) : (
               <>
-                <Text style={styles.emptyText}>No specials found in your area</Text>
+                <Text style={styles.emptyText}>{emptyText}</Text>
                 <Text style={styles.emptySubtext}>Try adjusting your location or filters</Text>
               </>
             )}
           </View>
         )}
         ListFooterComponent={() => (
-          isLoading && specials.length > 0 ? (
+          isLoading && currentData.length > 0 ? (
             <View style={styles.loadingFooter}>
               <Text style={styles.loadingText}>Loading more...</Text>
             </View>
@@ -384,29 +415,19 @@ export default function DashboardScreen() {
         )}
       />
 
-      {/* Saved Filters Modal */}
-      <Modal
-        visible={showSavedFilters}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowSavedFilters(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowSavedFilters(false)}
-        >
-          <View style={styles.savedFiltersModal}>
-            <Text style={styles.modalTitle}>Saved Filter Sets</Text>
-            <FlatList
-              data={savedFilterSets}
-              renderItem={renderSavedFilterSet}
-              keyExtractor={(item) => item.id}
-              style={styles.savedFiltersList}
-            />
-          </View>
-        </TouchableOpacity>
-      </Modal>
+      {/* Filter Modal */}
+      <FilterModal
+        visible={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        theme={theme}
+      />
+
+      {/* Applied Filters Modal */}
+      <AppliedFiltersModal
+        visible={showAppliedFiltersModal}
+        onClose={() => setShowAppliedFiltersModal(false)}
+        theme={theme}
+      />
     </SafeAreaView>
   );
 }
@@ -415,7 +436,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    paddingTop: theme.spacing.md,
+    paddingTop: StatusBar.currentHeight || 0,
   },
   headerSection: {
     backgroundColor: theme.colors.surface,
@@ -431,6 +452,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   tab: {
     paddingVertical: theme.spacing.sm,
@@ -443,25 +465,44 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   tabText: {
-    ...theme.typography.tabText,
+    fontSize: 14,
     color: theme.colors.textSecondary,
   },
   activeTabText: {
     color: theme.colors.background,
   },
+  filterButtonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  savedFilterBadge: {
+    fontSize: 10,
+    color: theme.colors.background,
+    borderRadius: 12,
+    textAlign: 'center',
+    verticalAlign: 'middle',
+    fontWeight: '600',
+    position: 'absolute',
+    right: -8,
+    top: -8,
+    width: 16,
+    height: 16,
+    backgroundColor: theme.colors.primary,
+  },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 'auto',
     paddingVertical: theme.spacing.sm,
     paddingHorizontal: theme.spacing.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    position: 'relative',
   },
   filterButtonText: {
-    ...theme.typography.bodySmall,
+    fontSize: 12,
     color: theme.colors.text,
-    marginRight: theme.spacing.xs,
+    marginHorizontal: theme.spacing.xs,
   },
   searchContainer: {
     paddingHorizontal: theme.spacing.lg,
@@ -482,7 +523,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    ...theme.typography.body,
+    fontSize: 16,
     color: theme.colors.text,
     height: '100%',
   },
@@ -497,14 +538,22 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
   },
+  locationHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  locationIcon: {
+  },
   locationText: {
-    ...theme.typography.bodySmall,
+    fontSize: 14,
     color: theme.colors.textSecondary,
   },
   resultsText: {
-    ...theme.typography.caption,
+    fontSize: 12,
     color: theme.colors.textLight,
     marginTop: 2,
+    marginLeft: 20,
   },
   errorContainer: {
     backgroundColor: theme.colors.error || '#ff6b6b',
@@ -515,7 +564,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    ...theme.typography.bodySmall,
+    fontSize: 14,
     color: theme.colors.background,
     flex: 1,
   },
@@ -524,7 +573,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingHorizontal: theme.spacing.sm,
   },
   errorDismissText: {
-    ...theme.typography.bodySmall,
+    fontSize: 14,
     color: theme.colors.background,
     fontWeight: '600',
   },
@@ -540,52 +589,9 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    ...theme.typography.bodySmall,
+    fontSize: 14,
     color: theme.colors.textSecondary,
   },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  savedFiltersModal: {
-    backgroundColor: theme.colors.background,
-    marginHorizontal: theme.spacing.xl,
-    paddingVertical: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    maxHeight: '60%',
-    minWidth: '80%',
-  },
-  modalTitle: {
-    ...theme.typography.h3,
-    color: theme.colors.text,
-    textAlign: 'center',
-    marginBottom: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  savedFiltersList: {
-    maxHeight: 300,
-  },
-  savedFilterItem: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  savedFilterName: {
-    ...theme.typography.body,
-    color: theme.colors.text,
-    fontWeight: '600',
-    marginBottom: theme.spacing.xs,
-  },
-  savedFilterPreview: {
-    ...theme.typography.bodySmall,
-    color: theme.colors.textSecondary,
-  },
-  // Empty state styles
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -593,13 +599,13 @@ const createStyles = (theme: any) => StyleSheet.create({
     paddingVertical: theme.spacing.xxl,
   },
   emptyText: {
-    ...theme.typography.body,
+    fontSize: 16,
     color: theme.colors.textSecondary,
     textAlign: 'center',
     marginBottom: theme.spacing.xs,
   },
   emptySubtext: {
-    ...theme.typography.bodySmall,
+    fontSize: 14,
     color: theme.colors.textLight,
     textAlign: 'center',
   },

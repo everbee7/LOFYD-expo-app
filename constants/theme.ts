@@ -8,16 +8,16 @@ export const theme = {
     primaryDisable: '#66b3a6',
 
     // Background colors
-    background: '#ffffff', // White background for restaurant app
+    background: '#ffffff', // White background
     surface: '#ffffff', // White surface
     cardBackground: '#ffffff', // White cards
     tabBarBackground: '#ffffff', // White tab bar
 
     // Text colors
-    text: '#141820', // Dark text
+    text: '#000000', // Dark text
     textSecondary: '#444444', // Secondary text
     textLight: '#999999', // Light text for distances, etc.
-    textBlack: '#141820', // Pure black for headings
+    textBlack: '#000000', // Pure black for headings
 
     // Status colors
     error: '#ef4444',
@@ -48,7 +48,7 @@ export const theme = {
   },
 
   borderRadius: {
-    none: 0, // No border radius for restaurant app
+    none: 0,
     sm: 6,
     md: 8,
     lg: 12,
@@ -91,22 +91,6 @@ export const theme = {
       fontSize: 16,
       fontWeight: '600' as const,
       lineHeight: 20,
-    },
-    // Restaurant specific typography
-    restaurantName: {
-      fontSize: 18,
-      fontWeight: '700' as const,
-      lineHeight: 22,
-    },
-    restaurantDescription: {
-      fontSize: 14,
-      fontWeight: '400' as const,
-      lineHeight: 20,
-    },
-    restaurantDistance: {
-      fontSize: 12,
-      fontWeight: '400' as const,
-      lineHeight: 16,
     },
     tabText: {
       fontSize: 14,
@@ -165,12 +149,9 @@ export const theme = {
     },
   },
 
-  // Restaurant app specific dimensions
   dimensions: {
     filterIconSize: 32,
     filterBadgeSize: 16,
-    restaurantImageWidth: 80,
-    restaurantImageHeight: 60,
     searchIconSize: 20,
     closeIconSize: 14,
     chevronIconSize: 16,

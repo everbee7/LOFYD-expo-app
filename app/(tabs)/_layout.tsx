@@ -4,23 +4,23 @@ import { FontAwesome5, Ionicons, AntDesign } from '@expo/vector-icons';
 import { View, StyleSheet, Platform } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 
-const TabIcon = ({ 
-  name, 
-  color, 
-  focused, 
-  library = 'FontAwesome5' 
-}: { 
-  name: any, 
-  color: string, 
+const TabIcon = ({
+  name,
+  color,
+  focused,
+  library = 'FontAwesome5'
+}: {
+  name: any,
+  color: string,
   focused: boolean,
   library?: 'FontAwesome5' | 'Ionicons' | 'AntDesign'
 }) => {
   const { theme } = useTheme();
-  
+
   const renderIcon = () => {
     const iconColor = focused ? theme.colors.primary : color;
     const iconSize = 24;
-    
+
     switch (library) {
       case 'Ionicons':
         return <Ionicons name={name} size={iconSize} color={iconColor} />;
@@ -31,11 +31,11 @@ const TabIcon = ({
         return <FontAwesome5 name={name} size={iconSize} color={iconColor} />;
     }
   };
-  
+
   return (
     <View style={[
       styles.iconContainer,
-      { 
+      {
         backgroundColor: focused ? theme.colors.inputBackground : 'transparent',
       }
     ]}>
@@ -85,17 +85,17 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon 
-              name="home" 
-              color={color} 
-              focused={focused} 
-              library="Ionicons" 
+            <TabIcon
+              name="home"
+              color={color}
+              focused={focused}
+              library="Ionicons"
             />
           ),
         }}
       />
 
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="favorites"
         options={{
           title: "Favorites",
@@ -108,18 +108,18 @@ export default function TabLayout() {
             />
           ),
         }}
-      />
+      /> */}
 
       <Tabs.Screen
         name="profile"
         options={{
           title: "Manage",
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon 
-              name="person" 
-              color={color} 
-              focused={focused} 
-              library="Ionicons" 
+            <TabIcon
+              name="person"
+              color={color}
+              focused={focused}
+              library="Ionicons"
             />
           ),
         }}
