@@ -10,8 +10,11 @@ import {
   Platform,
   StatusBar,
   ActivityIndicator,
-  Alert
+  Alert,
+  Linking,
+  Share
 } from 'react-native';
+import * as ExpoLinking from 'expo-linking';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -80,25 +83,165 @@ export default function LocationDetail() {
     router.back();
   };
 
-  const handleShare = () => {
-    // Implement share functionality
-    console.log('Share location:', location?.name);
-  };
+  const handleShare = async () => {
+    try {
+      if (!location) return;
 
-  const handleDirections = () => {
-    // Implement directions functionality
-    if (location?.coordinates) {
-      const { latitude, longitude } = location.coordinates;
-      console.log('Get directions to:', latitude, longitude);
-      // You can integrate with maps app here
+      const fullAddress = `${location.street}, ${location.city}, ${location.state} ${location.postalCode}`;
+      const shareContent = {
+        title: location.name,
+        message: `Check out ${location.name}!\n\nAddress: ${fullAddress}\n${location.phone ? `Phone: ${location.phone}\n` : ''}${location.description ? `\n${location.description}` : ''}`,
+        url: undefined, // You can add your app's deep link here if you have one
+      };
+
+      const result = await Share.share(shareContent);
+
+      if (result.action === Share.sharedAction) {
+        console.log('Location shared successfully');
+      }
+    } catch (error) {
+      console.error('Error sharing location:', error);
+      Alert.alert('Error', 'Unable to share location. Please try again.');
     }
   };
 
-  const handleCall = () => {
-    // Implement call functionality
-    if (location?.phone) {
-      console.log('Call:', location.phone);
-      // You can use Linking.openURL(`tel:${location.phone}`) here
+  // Complete handleDirections function
+  const handleDirections = async () => {
+    try {
+      if (!location) return;
+
+      const { coordinates } = location;
+      const fullAddress = `${location.street}, ${location.city}, ${location.state} ${location.postalCode}`;
+
+      let mapUrl = '';
+
+      // Check if we have coordinates and they're not zero
+      if (coordinates && coordinates.Latitude !== 0 && coordinates.Longitude !== 0) {
+        // Use coordinates for more accurate directions
+        const { Latitude: lat, Longitude: lng } = coordinates;
+
+        if (Platform.OS === 'ios') {
+          // iOS - Try Apple Maps first, fallback to Google Maps
+          mapUrl = `maps://app?daddr=${lat},${lng}`;
+          const canOpenAppleMaps = await Linking.canOpenURL(mapUrl);
+
+          if (!canOpenAppleMaps) {
+            mapUrl = `https://maps.google.com/maps?daddr=${lat},${lng}`;
+          }
+        } else {
+          // Android - Use Google Maps
+          mapUrl = `https://maps.google.com/maps?daddr=${lat},${lng}`;
+        }
+      } else {
+        // Fallback to address-based directions
+        const encodedAddress = encodeURIComponent(fullAddress);
+
+        if (Platform.OS === 'ios') {
+          // iOS - Try Apple Maps first, fallback to Google Maps
+          mapUrl = `maps://app?daddr=${encodedAddress}`;
+          const canOpenAppleMaps = await Linking.canOpenURL(mapUrl);
+
+          if (!canOpenAppleMaps) {
+            mapUrl = `https://maps.google.com/maps?daddr=${encodedAddress}`;
+          }
+        } else {
+          // Android - Use Google Maps
+          mapUrl = `https://maps.google.com/maps?daddr=${encodedAddress}`;
+        }
+      }
+
+      // Open the map application
+      const canOpenMap = await Linking.canOpenURL(mapUrl);
+
+      if (canOpenMap) {
+        await Linking.openURL(mapUrl);
+      } else {
+        // Final fallback - open in browser
+        const browserUrl = coordinates && coordinates.Latitude !== 0 && coordinates.Longitude !== 0
+          ? `https://www.google.com/maps/dir/?api=1&destination=${coordinates.Latitude},${coordinates.Longitude}`
+          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+
+        await Linking.openURL(browserUrl);
+      }
+    } catch (error) {
+      console.error('Error opening directions:', error);
+      Alert.alert('Error', 'Unable to open directions. Please try again.');
+    }
+  };
+
+  // Alternative handleDirections with user choice (optional)
+  const handleDirectionsWithChoice = () => {
+    if (!location) return;
+
+    const { coordinates } = location;
+    const fullAddress = `${location.street}, ${location.city}, ${location.state} ${location.postalCode}`;
+
+    Alert.alert(
+      'Get Directions',
+      'Choose your preferred map application:',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Google Maps',
+          onPress: async () => {
+            const url = coordinates && coordinates.Latitude !== 0 && coordinates.Longitude !== 0
+              ? `https://maps.google.com/maps?daddr=${coordinates.Latitude},${coordinates.Longitude}`
+              : `https://maps.google.com/maps?daddr=${encodeURIComponent(fullAddress)}`;
+
+            try {
+              await Linking.openURL(url);
+            } catch (error) {
+              Alert.alert('Error', 'Unable to open Google Maps');
+            }
+          },
+        },
+        ...(Platform.OS === 'ios' ? [{
+          text: 'Apple Maps',
+          onPress: async () => {
+            const url = coordinates && coordinates.Latitude !== 0 && coordinates.Longitude !== 0
+              ? `maps://app?daddr=${coordinates.Latitude},${coordinates.Longitude}`
+              : `maps://app?daddr=${encodeURIComponent(fullAddress)}`;
+
+            try {
+              const canOpen = await Linking.canOpenURL(url);
+              if (canOpen) {
+                await Linking.openURL(url);
+              } else {
+                Alert.alert('Error', 'Apple Maps is not available');
+              }
+            } catch (error) {
+              Alert.alert('Error', 'Unable to open Apple Maps');
+            }
+          },
+        }] : []),
+      ]
+    );
+  };
+
+  const handleCall = async () => {
+    try {
+      if (!location?.phone) {
+        Alert.alert('No Phone Number', 'Phone number is not available for this location.');
+        return;
+      }
+
+      const phoneNumber = location.phone;
+      const phoneUrl = `tel:${phoneNumber}`;
+
+      // Check if device can make phone calls
+      const canCall = await Linking.canOpenURL(phoneUrl);
+
+      if (canCall) {
+        await Linking.openURL(phoneUrl);
+      } else {
+        Alert.alert('Unable to Call', 'Your device cannot make phone calls or the phone number is invalid.');
+      }
+    } catch (error) {
+      console.error('Error making phone call:', error);
+      Alert.alert('Error', 'Unable to make phone call. Please try again.');
     }
   };
 
@@ -233,7 +376,7 @@ export default function LocationDetail() {
             <TouchableOpacity onPress={handleShare} style={styles.actionButton}>
               <Ionicons name="share-outline" size={20} color={theme.colors.text} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleDirections} style={styles.actionButton}>
+            <TouchableOpacity onPress={handleDirectionsWithChoice} style={styles.actionButton}>
               <Ionicons name="navigate-outline" size={20} color={theme.colors.text} />
             </TouchableOpacity>
             {location.phone && (

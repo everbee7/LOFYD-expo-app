@@ -1,6 +1,6 @@
 export interface Coordinates {
-  latitude: number;
-  longitude: number;
+  Latitude: number;
+  Longitude: number;
 }
 
 export type LocationType = 'locale' | 'postal' | 'coords';
