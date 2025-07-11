@@ -61,7 +61,7 @@ const createToggleButtonStyles = (theme: any) => StyleSheet.create({
   },
   toggleButtonText: {
     color: theme.colors.background || '#ffffff',
-    fontSize: 9,
+    fontSize: 12,
   },
   toggleButtonTextSelected: {
     color: theme.colors.primary || '#1e7065',

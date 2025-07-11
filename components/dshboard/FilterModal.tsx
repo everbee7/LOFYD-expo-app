@@ -63,10 +63,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
   // Collapse states for each section
   const [collapsedSections, setCollapsedSections] = useState({
-    price: false,
-    experience: false,
-    cuisine: false,
-    taste: false,
+    price: true,
+    experience: true,
+    cuisine: true,
+    taste: true,
   });
 
   // Initialize state with current store values when modal opens
@@ -641,9 +641,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
             <View style={styles.sectionContainer}>
               <MaterialCommunityIcons name="sort" size={20} color={theme.colors.background} style={styles.sectionIcon} />
               <View style={styles.sectionWrap}>
-                <View style={styles.sectionHeader}>
+                <View style={[styles.sectionHeader, { paddingVertical: 0 }]}>
                   <Text style={styles.serviceText}>Sort by</Text>
-                  <View style={[styles.toggleContainer, { paddingVertical: 0, paddingRight: theme.spacing.sm }]}>
+                  <View style={[styles.toggleContainer, { paddingVertical: 0, paddingRight: theme.spacing.sm, flex: 1, justifyContent: 'flex-end', marginLeft: theme.spacing.sm }]}>
                     {sortOptions.map(option =>
                       renderSingleToggleButton(
                         'sort' + option.value,
@@ -720,7 +720,7 @@ const createStyles = (theme: any) => {
       backgroundColor: theme.colors.background,
     },
     tabText: {
-      fontSize: 12,
+      fontSize: 14,
       color: theme.colors.background,
     },
     activeTabText: {
@@ -742,7 +742,7 @@ const createStyles = (theme: any) => {
     },
     saveButtonText: {
       color: theme.colors.background,
-      fontSize: 12,
+      fontSize: 14,
       fontWeight: '400',
     },
     applyButton: {
@@ -754,7 +754,7 @@ const createStyles = (theme: any) => {
     },
     applyButtonText: {
       color: theme.colors.background,
-      fontSize: 12,
+      fontSize: 14,
       fontWeight: '400',
     },
     content: {
@@ -840,7 +840,7 @@ const createStyles = (theme: any) => {
     },
     serviceText: {
       color: theme.colors.background,
-      fontSize: 12,
+      fontSize: 14,
     },
     serviceItemActive: {
       backgroundColor: theme.colors.background,
