@@ -13,11 +13,15 @@ interface LocationItemProps {
     cuisine: string[];
     amenities: string[];
     image: string;
+    priceRange: string;
+    serviceType: string[];
+    specialId?: string;
   };
+  isSpecial?: boolean;
   onPress?: () => void;
 }
 
-export default function LocationItem({ location, onPress }: LocationItemProps) {
+export default function LocationItem({ location, onPress, isSpecial = false}: LocationItemProps) {
   const { theme } = useTheme();
   const styles = createStyles(theme);
   const router = useRouter();
@@ -27,7 +31,13 @@ export default function LocationItem({ location, onPress }: LocationItemProps) {
       onPress();
     }
 
-    router.push({ pathname: "/location/[id]", params: { id: location.id } });
+    // If this is a special, pass the specialId as a parameter
+    const params: any = { id: location.id };
+    if (isSpecial && location.specialId) {
+      params.specialId = location.specialId;
+    }
+
+    router.push({ pathname: "/location/[id]", params });
   }
 
   return (

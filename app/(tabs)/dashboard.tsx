@@ -221,7 +221,8 @@ export default function DashboardScreen() {
     amenities: [...(special.experience || []), ...(special.taste || [])],
     image: special.images?.[0] || '',
     priceRange: special.priceRange,
-    serviceType: special.serviceType || []
+    serviceType: special.serviceType || [],
+    specialId: special.id
   });
 
   // Convert Location objects to format expected by LocationItem
@@ -239,7 +240,7 @@ export default function DashboardScreen() {
   });
 
   const renderSpecialItem = ({ item }: { item: any }) => (
-    <LocationItem location={convertSpecialToLocation(item)} />
+    <LocationItem location={convertSpecialToLocation(item)} isSpecial={true} />
   );
 
   const renderLocationItem = ({ item }: { item: any }) => (

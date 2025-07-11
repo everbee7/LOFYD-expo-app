@@ -21,7 +21,7 @@ import { specialService } from '@/services/special';
 import { Location, Special } from '@/types/location';
 
 export default function LocationDetail() {
-  const { id } = useLocalSearchParams();
+  const { id, specialId } = useLocalSearchParams();
   const router = useRouter();
   const { theme } = useTheme();
 
@@ -50,6 +50,14 @@ export default function LocationDetail() {
 
       setLocation(locationData);
       setSpecials(specialsData);
+
+      // If specialId is provided, find and select the corresponding special
+      if (specialId && typeof specialId === 'string') {
+        const targetSpecial = specialsData.find(special => special.id === specialId);
+        if (targetSpecial) {
+          setSelectedSpecial(targetSpecial);
+        }
+      }
     } catch (err: any) {
       console.error('Error loading location data:', err);
       setError(err?.message || 'Failed to load location data');
@@ -57,7 +65,7 @@ export default function LocationDetail() {
     } finally {
       setIsLoading(false);
     }
-  }, [id, getLocationById]);
+  }, [id, specialId, getLocationById]);
 
   // Load data when component mounts
   useFocusEffect(
