@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  StatusBar
+  StatusBar,
+  Alert
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
+import * as Location from 'expo-location';
 
 // Import components
 import Tabs from '../../components/common/Tabs';
@@ -68,22 +70,22 @@ export default function ProfileScreen() {
       value: false,
       icon: 'finger-print-outline'
     },
-    {
-      id: 'notifications',
-      title: 'Push Notifications',
-      subtitle: 'Receive notifications about new deals and updates',
-      type: 'toggle',
-      value: true,
-      icon: 'notifications-outline'
-    },
-    {
-      id: 'email',
-      title: 'Email Notifications',
-      subtitle: 'Receive email updates about locations and offers',
-      type: 'toggle',
-      value: false,
-      icon: 'mail-outline'
-    },
+    // {
+    //   id: 'notifications',
+    //   title: 'Push Notifications',
+    //   subtitle: 'Receive notifications about new deals and updates',
+    //   type: 'toggle',
+    //   value: true,
+    //   icon: 'notifications-outline'
+    // },
+    // {
+    //   id: 'email',
+    //   title: 'Email Notifications',
+    //   subtitle: 'Receive email updates about locations and offers',
+    //   type: 'toggle',
+    //   value: false,
+    //   icon: 'mail-outline'
+    // },
     {
       id: 'location',
       title: 'Location Services',
@@ -92,30 +94,30 @@ export default function ProfileScreen() {
       value: true,
       icon: 'location-outline'
     },
-    {
-      id: 'privacy',
-      title: 'Privacy Policy',
-      subtitle: 'View our privacy policy and terms',
-      type: 'navigation',
-      icon: 'shield-outline',
-      onPress: () => handleNavigation('privacy')
-    },
-    {
-      id: 'support',
-      title: 'Help & Support',
-      subtitle: 'Get help or contact customer support',
-      type: 'navigation',
-      icon: 'help-circle-outline',
-      onPress: () => handleNavigation('support')
-    },
-    {
-      id: 'about',
-      title: 'About',
-      subtitle: 'App version and information',
-      type: 'navigation',
-      icon: 'information-circle-outline',
-      onPress: () => handleNavigation('about')
-    }
+    // {
+    //   id: 'privacy',
+    //   title: 'Privacy Policy',
+    //   subtitle: 'View our privacy policy and terms',
+    //   type: 'navigation',
+    //   icon: 'shield-outline',
+    //   onPress: () => handleNavigation('privacy')
+    // },
+    // {
+    //   id: 'support',
+    //   title: 'Help & Support',
+    //   subtitle: 'Get help or contact customer support',
+    //   type: 'navigation',
+    //   icon: 'help-circle-outline',
+    //   onPress: () => handleNavigation('support')
+    // },
+    // {
+    //   id: 'about',
+    //   title: 'About',
+    //   subtitle: 'App version and information',
+    //   type: 'navigation',
+    //   icon: 'information-circle-outline',
+    //   onPress: () => handleNavigation('about')
+    // }
   ]);
 
   useEffect(() => {
@@ -159,6 +161,29 @@ export default function ProfileScreen() {
     checkBiometricStatus();
   }, []);
 
+  // Check location permission status when component loads
+  useEffect(() => {
+    const checkLocationStatus = async () => {
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        const isLocationEnabled = status === 'granted';
+
+        // Store location permission status
+        await AsyncStorage.setItem('locationPermissionGranted', JSON.stringify(isLocationEnabled));
+
+        setSettingsData(prev =>
+          prev.map(setting =>
+            setting.id === 'location' ? { ...setting, value: isLocationEnabled } : setting
+          )
+        );
+      } catch (error) {
+        console.error('Error checking location status:', error);
+      }
+    };
+
+    checkLocationStatus();
+  }, []);
+
   const styles = createStyles(theme);
 
   const tabs = [
@@ -191,6 +216,12 @@ export default function ProfileScreen() {
   };
 
   const handleUpdateSetting = (id: string, value: any) => {
+    // Handle location setting specifically
+    if (id === 'location') {
+      handleLocationToggle(value);
+      return;
+    }
+
     setSettingsData(prev =>
       prev.map(setting =>
         setting.id === id ? { ...setting, value } : setting
@@ -202,6 +233,80 @@ export default function ProfileScreen() {
       handleBiometricToggle(value);
     } else {
       console.log(`Setting ${id} updated to:`, value);
+    }
+  };
+
+  const handleLocationToggle = async (enabled: boolean) => {
+    if (enabled) {
+      try {
+        // Request location permission
+        const { status } = await Location.requestForegroundPermissionsAsync();
+
+        if (status === 'granted') {
+          // Permission granted, update state and storage
+          setSettingsData(prev =>
+            prev.map(setting =>
+              setting.id === 'location' ? { ...setting, value: true } : setting
+            )
+          );
+
+          await AsyncStorage.setItem('locationPermissionGranted', JSON.stringify(true));
+
+          Alert.alert(
+            'Location Enabled',
+            'You can now use current location features in the app.',
+            [{ text: 'OK' }]
+          );
+        } else {
+          // Permission denied, keep toggle off
+          setSettingsData(prev =>
+            prev.map(setting =>
+              setting.id === 'location' ? { ...setting, value: false } : setting
+            )
+          );
+
+          await AsyncStorage.setItem('locationPermissionGranted', JSON.stringify(false));
+
+          Alert.alert(
+            'Location Permission Denied',
+            'Location services are required for location-based features. You can enable them later in your device settings.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Settings',
+                onPress: () => {
+                  // Open device settings - this might need a linking library
+                  console.log('Open device settings for location');
+                }
+              }
+            ]
+          );
+        }
+      } catch (error) {
+        console.error('Error requesting location permission:', error);
+        setSettingsData(prev =>
+          prev.map(setting =>
+            setting.id === 'location' ? { ...setting, value: false } : setting
+          )
+        );
+
+        await AsyncStorage.setItem('locationPermissionGranted', JSON.stringify(false));
+      }
+    } else {
+      // User is disabling location services
+      setSettingsData(prev =>
+        prev.map(setting =>
+          setting.id === 'location' ? { ...setting, value: false } : setting
+        )
+      );
+
+      await AsyncStorage.setItem('locationPermissionGranted', JSON.stringify(false));
+
+      Alert.alert(
+        'Location Disabled',
+        'Location-based features will not be available. You can re-enable this in settings.',
+        [{ text: 'OK' }]
+      );
     }
   };
 

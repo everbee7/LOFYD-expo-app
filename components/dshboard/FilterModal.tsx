@@ -21,6 +21,8 @@ import { locationService } from '@/services/location';
 import SaveFilterModal from './SaveFilterModal';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 
 interface FilterModalProps {
   visible: boolean;
@@ -60,6 +62,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
   const [showSaveModal, setShowSaveModal] = useState(false);
 
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isLocationEnabled, setIsLocationEnabled] = useState(false);
 
   // Collapse states for each section
   const [collapsedSections, setCollapsedSections] = useState({
@@ -68,6 +71,24 @@ const FilterModal: React.FC<FilterModalProps> = ({
     cuisine: true,
     taste: true,
   });
+
+  // Check location permission status when modal opens
+  useEffect(() => {
+    const checkLocationPermission = async () => {
+      try {
+        const locationPermission = await AsyncStorage.getItem('locationPermissionGranted');
+        const isEnabled = locationPermission ? JSON.parse(locationPermission) : false;
+        setIsLocationEnabled(isEnabled);
+      } catch (error) {
+        console.error('Error checking location permission:', error);
+        setIsLocationEnabled(false);
+      }
+    };
+
+    if (visible) {
+      checkLocationPermission();
+    }
+  }, [visible]);
 
   // Initialize state with current store values when modal opens
   useFocusEffect(
@@ -231,27 +252,11 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setSelectedItem(item);
   };
 
-
   const getCurrentLocation = async () => {
     try {
       setIsGettingLocation(true);
 
-      // Request permission to access location
-      const { status } = await Location.requestForegroundPermissionsAsync();
-
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permission Required',
-          'Please enable location permissions to use current location feature.',
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Settings', onPress: () => Location.requestForegroundPermissionsAsync() }
-          ]
-        );
-        return;
-      }
-
-      // Get current position
+      // Get current position - permission should already be granted
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
         timeInterval: 10000,
@@ -282,9 +287,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
           ].filter(Boolean).join(', ');
 
           if (formattedAddress) {
-            // You can choose to use either coordinates or formatted address
-            // setTempSearchLocation(formattedAddress);
-
             // Show user a choice
             Alert.alert(
               'Location Found',
@@ -304,7 +306,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
         }
       } catch (reverseGeocodeError) {
         console.log('Reverse geocoding failed, using coordinates:', reverseGeocodeError);
-        // Coordinates are already set, so we're good
       }
 
     } catch (error: any) {
@@ -326,6 +327,27 @@ const FilterModal: React.FC<FilterModalProps> = ({
     }
   };
 
+  const handleLocationButtonPress = () => {
+    if (!isLocationEnabled) {
+      Alert.alert(
+        'Location Services Disabled',
+        'Please enable location services in Settings to use this feature.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Go to Settings',
+            onPress: () => {
+              onClose(); // Close the filter modal
+              router.push('/profile');
+            }
+          }
+        ]
+      );
+      return;
+    }
+
+    getCurrentLocation();
+  };
 
   const renderSingleToggleButton = (
     key: string,
@@ -449,35 +471,56 @@ const FilterModal: React.FC<FilterModalProps> = ({
                 />
               </View>
 
-              <TouchableOpacity
-                style={[
-                  styles.locationContainer,
-                  isGettingLocation && styles.locationContainerLoading
-                ]}
-                onPress={getCurrentLocation}
-                disabled={isGettingLocation}
-              >
-                {isGettingLocation ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={theme.colors.primary}
-                    style={styles.locationIcon}
-                  />
-                ) : (
+              {/* Only show Current Location button if location is enabled */}
+              {isLocationEnabled && (
+                <TouchableOpacity
+                  style={[
+                    styles.locationContainer,
+                    isGettingLocation && styles.locationContainerLoading
+                  ]}
+                  onPress={handleLocationButtonPress}
+                  disabled={isGettingLocation}
+                >
+                  {isGettingLocation ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={theme.colors.primary}
+                      style={styles.locationIcon}
+                    />
+                  ) : (
+                    <Ionicons
+                      name="location"
+                      size={16}
+                      color={theme.colors.textSecondary}
+                      style={styles.locationIcon}
+                    />
+                  )}
+                  <Text style={[
+                    styles.locationText,
+                    isGettingLocation && styles.locationTextLoading
+                  ]}>
+                    {isGettingLocation ? 'Getting location...' : 'Current Location'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Show message if location is disabled */}
+              {!isLocationEnabled && (
+                <TouchableOpacity
+                  style={styles.locationDisabledContainer}
+                  onPress={handleLocationButtonPress}
+                >
                   <Ionicons
-                    name="location"
+                    name="location-outline"
                     size={16}
-                    color={theme.colors.textSecondary}
+                    color={theme.colors.text}
                     style={styles.locationIcon}
                   />
-                )}
-                <Text style={[
-                  styles.locationText,
-                  isGettingLocation && styles.locationTextLoading
-                ]}>
-                  {isGettingLocation ? 'Getting location...' : 'Current Location'}
-                </Text>
-              </TouchableOpacity>
+                  <Text style={styles.locationDisabledText}>
+                    Enable location in Settings to use current location
+                  </Text>
+                </TouchableOpacity>
+              )}
 
               <View style={styles.searchLabelWrap}>
                 <Ionicons
@@ -490,6 +533,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
               </View>
             </View>
 
+            {/* Rest of your existing filter sections... */}
             {/* Refine with filters */}
             <Text style={styles.refineTitle}>Refine with filters</Text>
 
@@ -797,14 +841,27 @@ const createStyles = (theme: any) => {
       lineHeight: 36,
       color: theme.colors.primary,
     },
-
     locationContainerLoading: {
       opacity: 0.7,
     },
     locationTextLoading: {
       color: theme.colors.textLight,
     },
-
+    locationDisabledContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.background,
+      paddingHorizontal: theme.spacing.sm,
+      marginBottom: theme.spacing.xs,
+      opacity: 0.6,
+    },
+    locationDisabledText: {
+      fontSize: 12,
+      fontWeight: '400',
+      lineHeight: 36,
+      color: theme.colors.text,
+      flex: 1,
+    },
     searchLabelWrap: {
       flexDirection: 'row',
       alignItems: 'center',
