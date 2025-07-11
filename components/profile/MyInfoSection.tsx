@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -23,6 +23,17 @@ interface MyInfoSectionProps {
   loading?: boolean;
 }
 
+// Frequency options
+const FREQUENCY_OPTIONS = [
+  { label: 'Daily', value: 'daily' },
+  { label: '2-3 times per week', value: '2-3-week' },
+  { label: 'Once a week', value: 'weekly' },
+  { label: '2-3 times per month', value: '2-3-month' },
+  { label: 'Once a month', value: 'monthly' },
+  { label: 'Rarely', value: 'rarely' },
+  { label: 'Never', value: 'never' },
+];
+
 const MyInfoSection: React.FC<MyInfoSectionProps> = ({
   userInfo,
   onSave,
@@ -32,6 +43,7 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
   const { theme } = useTheme();
   const [formData, setFormData] = useState<UserInfo>(userInfo);
   const [isEditing, setIsEditing] = useState(false);
+  const [showFrequencyModal, setShowFrequencyModal] = useState(false);
 
   useEffect(() => {
     setFormData(userInfo);
@@ -52,6 +64,90 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
     setFormData(userInfo);
     setIsEditing(false);
   };
+
+  const handleFrequencySelect = (frequency: string) => {
+    setFormData({ ...formData, frequency });
+    setShowFrequencyModal(false);
+  };
+
+  const getFrequencyLabel = (value: string) => {
+    const option = FREQUENCY_OPTIONS.find(opt => opt.value === value);
+    return option ? option.label : value;
+  };
+
+  const FrequencyDropdown = () => (
+    <View style={styles.dropdownContainer}>
+      <Text style={styles.dropdownLabel}>How often do you go out to eat?</Text>
+      <TouchableOpacity
+        style={[
+          styles.dropdownButton,
+          !isEditing && styles.dropdownButtonDisabled
+        ]}
+        onPress={() => isEditing && setShowFrequencyModal(true)}
+        disabled={!isEditing}
+      >
+        <Text style={[
+          styles.dropdownButtonText,
+          !formData.frequency && styles.dropdownPlaceholder
+        ]}>
+          {formData.frequency ? getFrequencyLabel(formData.frequency) : 'Select frequency'}
+        </Text>
+        <Ionicons 
+          name="chevron-down" 
+          size={20} 
+          color={isEditing ? theme.colors.primary : theme.colors.textSecondary} 
+        />
+      </TouchableOpacity>
+    </View>
+  );
+
+  const FrequencyModal = () => (
+    <Modal
+      visible={showFrequencyModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowFrequencyModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>How often do you go out to eat?</Text>
+            <TouchableOpacity 
+              onPress={() => setShowFrequencyModal(false)}
+              style={styles.closeButton}
+            >
+              <Ionicons name="close" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
+          
+          <FlatList
+            data={FREQUENCY_OPTIONS}
+            keyExtractor={(item) => item.value}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.modalOption,
+                  formData.frequency === item.value && styles.modalOptionSelected
+                ]}
+                onPress={() => handleFrequencySelect(item.value)}
+              >
+                <Text style={[
+                  styles.modalOptionText,
+                  formData.frequency === item.value && styles.modalOptionTextSelected
+                ]}>
+                  {item.label}
+                </Text>
+                {formData.frequency === item.value && (
+                  <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
+                )}
+              </TouchableOpacity>
+            )}
+            style={styles.modalList}
+          />
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <View style={styles.container}>
@@ -122,15 +218,8 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
           style={isEditing ? {} : styles.readOnlyInput}
         />
 
-        {/* Frequency Input */}
-        <Input
-          label="How often do you go out to eat?"
-          placeholder="Frequency"
-          value={formData.frequency}
-          onChangeText={(text) => setFormData({ ...formData, frequency: text })}
-          editable={isEditing}
-          style={isEditing ? {} : styles.readOnlyInput}
-        />
+        {/* Frequency Dropdown */}
+        <FrequencyDropdown />
       </View>
 
       {/* Action Buttons */}
@@ -173,6 +262,9 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
           </View>
         )}
       </View>
+
+      {/* Frequency Modal */}
+      <FrequencyModal />
     </View>
   );
 };
@@ -211,7 +303,94 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   editActionButton: {
     flex: 1,
-  }
+  },
+  
+  // Dropdown styles
+  dropdownContainer: {
+    marginBottom: theme.spacing.md,
+  },
+  dropdownLabel: {
+    ...theme.typography.label,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  },
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.inputBackground,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.inputBorder,
+    minHeight: 48,
+  },
+  dropdownButtonDisabled: {
+    backgroundColor: theme.colors.inputReadOnly,
+    opacity: 0.8,
+  },
+  dropdownButtonText: {
+    ...theme.typography.body,
+    color: theme.colors.text,
+    flex: 1,
+  },
+  dropdownPlaceholder: {
+    color: theme.colors.textSecondary,
+  },
+  
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: theme.colors.background,
+    borderTopLeftRadius: theme.borderRadius.lg,
+    borderTopRightRadius: theme.borderRadius.lg,
+    maxHeight: '60%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  modalTitle: {
+    ...theme.typography.h3,
+    color: theme.colors.text,
+    flex: 1,
+  },
+  closeButton: {
+    padding: theme.spacing.xs,
+  },
+  modalList: {
+    paddingHorizontal: theme.spacing.lg,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  modalOptionSelected: {
+    // backgroundColor: theme.colors.primaryLight || theme.colors.primary + '10',
+  },
+  modalOptionText: {
+    ...theme.typography.body,
+    color: theme.colors.text,
+    flex: 1,
+  },
+  modalOptionTextSelected: {
+    color: theme.colors.primary,
+    fontWeight: '600',
+  },
 });
 
 export default MyInfoSection;
