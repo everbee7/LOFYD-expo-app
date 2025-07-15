@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/auth';
-import { biometricService } from '../services/biometric';
+import { BIOMETRIC_USER_ID, BIOMETRIC_USER_REFRESH_TOKEN_KEY, BIOMETRIC_USER_TOKEN_KEY, biometricService } from '../services/biometric';
 import { AuthState, User, SignUpRequest, UserProfileRequest } from '../types/auth';
 
 const useAuthStore = create<AuthState>((set, get) => ({
@@ -59,6 +59,10 @@ const useAuthStore = create<AuthState>((set, get) => ({
 			await AsyncStorage.setItem('userId', response.userId);
 			await AsyncStorage.setItem('accessToken', response.token.accessToken);
 			await AsyncStorage.setItem('refreshToken', response.token.refreshToken);
+			// Update Biometric data
+			await AsyncStorage.setItem(BIOMETRIC_USER_ID, response.userId);
+			await AsyncStorage.setItem(BIOMETRIC_USER_TOKEN_KEY, response.token.idToken);
+			await AsyncStorage.setItem(BIOMETRIC_USER_REFRESH_TOKEN_KEY, response.token.refreshToken);
 
 			// Update biometric tokens if biometric is enabled
 			await biometricService.updateBiometricTokens(
@@ -84,6 +88,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
 			const user = await authService.loginWithToken({ token: idToken });
 			await AsyncStorage.setItem('idToken', idToken);
+			await AsyncStorage.setItem(BIOMETRIC_USER_TOKEN_KEY, idToken);
 
 			if (user) {
 				set({ user, isLoading: false });
@@ -109,6 +114,8 @@ const useAuthStore = create<AuthState>((set, get) => ({
 			await AsyncStorage.setItem('idToken', response.token.idToken);
 			await AsyncStorage.setItem('userId', response.userId);
 			await AsyncStorage.setItem('accessToken', response.token.accessToken);
+			await AsyncStorage.setItem(BIOMETRIC_USER_ID, response.userId);
+			await AsyncStorage.setItem(BIOMETRIC_USER_TOKEN_KEY, response.token.idToken);
 
 			// Update biometric tokens with new tokens
 			await biometricService.updateBiometricTokens(
@@ -172,9 +179,6 @@ const useAuthStore = create<AuthState>((set, get) => ({
 	logout: async (): Promise<void> => {
 		try {
 			await AsyncStorage.removeItem('idToken');
-			await AsyncStorage.removeItem('userId');
-			await AsyncStorage.removeItem('accessToken');
-			await AsyncStorage.removeItem('refreshToken');
 
 			set({ user: null, error: null });
 		} catch (error: any) {

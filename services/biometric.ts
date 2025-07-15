@@ -3,9 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Platform } from 'react-native';
 
 const BIOMETRIC_ENABLED_KEY = 'biometricEnabled';
-const BIOMETRIC_USER_ID = 'userId';
-const BIOMETRIC_USER_TOKEN_KEY = 'idToken';
-const BIOMETRIC_USER_REFRESH_TOKEN_KEY = 'refreshToken';
+export const BIOMETRIC_USER_ID = 'biometricUserId';
+export const BIOMETRIC_USER_TOKEN_KEY = 'biometricUserIdToken';
+export const BIOMETRIC_USER_REFRESH_TOKEN_KEY = 'biometricUserRefreshToken';
 
 export interface BiometricCapabilities {
   isAvailable: boolean;
@@ -100,7 +100,7 @@ export const biometricService = {
               text: 'Settings',
               onPress: () => {
                 Alert.alert(
-                  'Setup Instructions', 
+                  'Setup Instructions',
                   'Go to your device Settings and set up biometric authentication (fingerprint, face recognition, etc.) to use this feature.'
                 );
               }
@@ -197,7 +197,7 @@ export const biometricService = {
   async updateBiometricTokens(userId: string, idToken: string, refreshToken: string): Promise<void> {
     try {
       const isEnabled = await this.isBiometricEnabled();
-      
+
       if (isEnabled) {
         await AsyncStorage.setItem(BIOMETRIC_USER_ID, userId);
         await AsyncStorage.setItem(BIOMETRIC_USER_TOKEN_KEY, idToken);
@@ -210,7 +210,7 @@ export const biometricService = {
   },
 
   // Perform biometric login
-  async biometricLogin(): Promise<{ success: boolean; userId?: string ; idToken?: string; refreshToken?: string; tokenStatus?: 'valid' | 'expired' | 'invalid' }> {
+  async biometricLogin(): Promise<{ success: boolean; userId?: string; idToken?: string; refreshToken?: string; tokenStatus?: 'valid' | 'expired' | 'invalid' }> {
     try {
       const isEnabled = await this.isBiometricEnabled();
 
@@ -222,15 +222,15 @@ export const biometricService = {
 
       if (authResult.success) {
         const { userId, idToken, refreshToken } = await this.getBiometricUserInfo();
-        
+
         if (userId && idToken && refreshToken) {
           // Check if idToken is expired on client side
           const tokenStatus = isTokenExpired(idToken) ? 'expired' : 'valid';
-          
-          return { 
-            success: true, 
-            userId, 
-            idToken, 
+
+          return {
+            success: true,
+            userId,
+            idToken,
             refreshToken,
             tokenStatus
           };
