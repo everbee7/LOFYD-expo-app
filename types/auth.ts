@@ -5,7 +5,8 @@ export interface User {
   firstName: string;
   lastName: string;
   postalCode: string;
-  // Add any additional user fields as needed
+  birthDate?: string;
+  eatOutFrequency?: string;
 }
 
 export interface SignUpRequest {
@@ -104,11 +105,31 @@ export interface ResetPasswordResponse {
   message: string;
 }
 
+export interface UserProfileRequest {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  postalCode: string;
+  birthDate?: string;
+  eatOutFrequency?: string;
+}
+
+export interface UserProfileResponse {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  postalCode: string;
+  birthDate?: string;
+  eatOutFrequency?: string;
+}
+
 export interface AuthState {
   user: User | null;
   isLoading: boolean;
   error: string | null;
-  
+
   // Core auth methods
   initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<User>;
@@ -118,12 +139,12 @@ export interface AuthState {
   signup: (signupData: SignUpRequest) => Promise<void>;
   confirmSignup: (email: string, confirmCode: string) => Promise<void>;
   logout: () => Promise<void>;
-  
+
   // Password reset methods
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (email: string, password: string, resetCode: string) => Promise<void>;
-  
-  
+  updateUserData: (userData: UserProfileRequest) => Promise<void>;
+
   // Utility methods
   clearError: () => void;
 }

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/auth';
 import { biometricService } from '../services/biometric';
-import { AuthState, User, SignUpRequest } from '../types/auth';
+import { AuthState, User, SignUpRequest, UserProfileRequest } from '../types/auth';
 
 const useAuthStore = create<AuthState>((set, get) => ({
 	user: null,
@@ -18,7 +18,13 @@ const useAuthStore = create<AuthState>((set, get) => ({
 			if (idToken) {
 				try {
 					const data = await authService.getUserData();
-					set({ user: data, isLoading: false });
+					console.log('data', data);
+					set({
+						user: {
+							...data,
+							userId: data.id
+						}, isLoading: false
+					});
 				} catch (error) {
 					set({ user: null, isLoading: false });
 				}
@@ -201,6 +207,26 @@ const useAuthStore = create<AuthState>((set, get) => ({
 			await authService.resetPassword({ email, password, resetCode });
 
 			set({ isLoading: false });
+		} catch (error: any) {
+			const errMsg = error?.data?.message || error?.message || error || 'Password reset failed';
+			set({ isLoading: false, error: errMsg });
+			throw error;
+		}
+	},
+
+	// Update userinfo
+	updateUserData: async (userData: UserProfileRequest): Promise<void> => {
+		try {
+			set({ isLoading: true, error: null });
+
+			const user = await authService.updateUserData(userData);
+
+			set({
+				user: {
+					...user,
+					userId: user.id
+				}, isLoading: false
+			});
 		} catch (error: any) {
 			const errMsg = error?.data?.message || error?.message || error || 'Password reset failed';
 			set({ isLoading: false, error: errMsg });

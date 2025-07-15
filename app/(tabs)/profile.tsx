@@ -27,9 +27,9 @@ interface UserInfo {
   firstName: string;
   lastName: string;
   email: string;
-  birthday: string;
+  birthDate: string;
   postalCode: string;
-  frequency: string;
+  eatOutFrequency: string;
 }
 
 interface SettingsItem {
@@ -48,16 +48,16 @@ export default function ProfileScreen() {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('myInfo');
   const [loading, setLoading] = useState(false);
-  const { logout, user } = useAuthStore();
+  const { logout, user, updateUserData } = useAuthStore();
 
   // Sample user data
   const [userInfo, setUserInfo] = useState<UserInfo>({
     firstName: '',
     lastName: '',
     email: '',
-    birthday: '',
+    birthDate: '',
     postalCode: '',
-    frequency: ''
+    eatOutFrequency: ''
   });
 
   // Sample settings data
@@ -199,8 +199,10 @@ export default function ProfileScreen() {
     setLoading(true);
     try {
       console.log('Saving user info:', updatedInfo);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await updateUserData({
+        ...updatedInfo,
+        id: user?.userId || ''
+      });
       setUserInfo(updatedInfo);
       console.log('User info saved successfully');
     } catch (error) {

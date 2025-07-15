@@ -15,7 +15,9 @@ import {
   ForgotPasswordResponse,
   ResetPasswordRequest,
   ResetPasswordResponse,
-  User
+  User,
+  UserProfileRequest,
+  UserProfileResponse
 } from '../types/auth';
 
 // Auth service functions
@@ -57,7 +59,12 @@ export const authService = {
 
   // Get user data (you might need this for token validation)
   // Note: This endpoint is not in your API spec, you may need to add it or adjust
-  async getUserData(): Promise<User> {
-    return apiRequest<User>('/auth/user-info', 'GET');
+  async getUserData(): Promise<UserProfileResponse> {
+    return apiRequest<UserProfileResponse>('/user/profile', 'GET');
+  },
+
+  // Update user data
+  async updateUserData(data: UserProfileRequest): Promise<UserProfileResponse> {
+    return apiRequest<UserProfileResponse>('/user/profile', 'PUT', data);
   },
 };

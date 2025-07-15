@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../contexts/ThemeContext';
 
 // Import your custom components
@@ -11,9 +12,9 @@ interface UserInfo {
   firstName: string;
   lastName: string;
   email: string;
-  birthday: string;
+  birthDate: string;
   postalCode: string;
-  frequency: string;
+  eatOutFrequency: string;
 }
 
 interface MyInfoSectionProps {
@@ -44,10 +45,19 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
   const [formData, setFormData] = useState<UserInfo>(userInfo);
   const [isEditing, setIsEditing] = useState(false);
   const [showFrequencyModal, setShowFrequencyModal] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   useEffect(() => {
     setFormData(userInfo);
-  }, [userInfo])
+    // Initialize date from birthDate string
+    if (userInfo.birthDate) {
+      const date = new Date(userInfo.birthDate);
+      if (!isNaN(date.getTime())) {
+        setSelectedDate(date);
+      }
+    }
+  }, [userInfo]);
 
   const styles = createStyles(theme);
 
@@ -63,17 +73,70 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
   const handleCancel = () => {
     setFormData(userInfo);
     setIsEditing(false);
+    // Reset date picker
+    if (userInfo.birthDate) {
+      const date = new Date(userInfo.birthDate);
+      if (!isNaN(date.getTime())) {
+        setSelectedDate(date);
+      }
+    }
   };
 
-  const handleFrequencySelect = (frequency: string) => {
-    setFormData({ ...formData, frequency });
+  const handleFrequencySelect = (eatOutFrequency: string) => {
+    setFormData({ ...formData, eatOutFrequency });
     setShowFrequencyModal(false);
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setSelectedDate(selectedDate);
+      // Format date as MM/DD/YYYY
+      const formattedDate = selectedDate.toLocaleDateString('en-US');
+      setFormData({ ...formData, birthDate: formattedDate });
+    }
   };
 
   const getFrequencyLabel = (value: string) => {
     const option = FREQUENCY_OPTIONS.find(opt => opt.value === value);
     return option ? option.label : value;
   };
+
+  const BirthdayDatePicker = () => (
+    <View style={styles.datePickerContainer}>
+      <Text style={styles.datePickerLabel}>Birthday</Text>
+      <TouchableOpacity
+        style={[
+          styles.datePickerButton,
+          !isEditing && styles.datePickerButtonDisabled
+        ]}
+        onPress={() => isEditing && setShowDatePicker(true)}
+        disabled={!isEditing}
+      >
+        <Text style={[
+          styles.datePickerButtonText,
+          !formData.birthDate && styles.datePickerPlaceholder
+        ]}>
+          {formData.birthDate || 'Select birthday'}
+        </Text>
+        <Ionicons 
+          name="calendar-outline" 
+          size={20} 
+          color={isEditing ? theme.colors.primary : theme.colors.textSecondary} 
+        />
+      </TouchableOpacity>
+      
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+          maximumDate={new Date()}
+        />
+      )}
+    </View>
+  );
 
   const FrequencyDropdown = () => (
     <View style={styles.dropdownContainer}>
@@ -88,9 +151,9 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
       >
         <Text style={[
           styles.dropdownButtonText,
-          !formData.frequency && styles.dropdownPlaceholder
+          !formData.eatOutFrequency && styles.dropdownPlaceholder
         ]}>
-          {formData.frequency ? getFrequencyLabel(formData.frequency) : 'Select frequency'}
+          {formData.eatOutFrequency ? getFrequencyLabel(formData.eatOutFrequency) : 'Select frequency'}
         </Text>
         <Ionicons 
           name="chevron-down" 
@@ -127,17 +190,17 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
               <TouchableOpacity
                 style={[
                   styles.modalOption,
-                  formData.frequency === item.value && styles.modalOptionSelected
+                  formData.eatOutFrequency === item.value && styles.modalOptionSelected
                 ]}
                 onPress={() => handleFrequencySelect(item.value)}
               >
                 <Text style={[
                   styles.modalOptionText,
-                  formData.frequency === item.value && styles.modalOptionTextSelected
+                  formData.eatOutFrequency === item.value && styles.modalOptionTextSelected
                 ]}>
                   {item.label}
                 </Text>
-                {formData.frequency === item.value && (
+                {formData.eatOutFrequency === item.value && (
                   <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
                 )}
               </TouchableOpacity>
@@ -194,17 +257,8 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
           style={isEditing ? {} : styles.readOnlyInput}
         />
 
-        {/* Birthday Input */}
-        <Input
-          label="Birthday"
-          placeholder="MM/DD/YYYY"
-          value={formData.birthday}
-          onChangeText={(text) => setFormData({ ...formData, birthday: text })}
-          keyboardType="numeric"
-          editable={isEditing}
-          style={isEditing ? {} : styles.readOnlyInput}
-          rightIcon={<Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />}
-        />
+        {/* Birthday DateTimePicker */}
+        <BirthdayDatePicker />
 
         {/* Home Zipcode Input */}
         <Input
@@ -303,6 +357,40 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   editActionButton: {
     flex: 1,
+  },
+  
+  // DateTimePicker styles
+  datePickerContainer: {
+    marginBottom: theme.spacing.md,
+  },
+  datePickerLabel: {
+    ...theme.typography.label,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xs,
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.inputBackground,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.inputBorder,
+    minHeight: 48,
+  },
+  datePickerButtonDisabled: {
+    backgroundColor: theme.colors.inputReadOnly,
+    opacity: 0.8,
+  },
+  datePickerButtonText: {
+    ...theme.typography.body,
+    color: theme.colors.text,
+    flex: 1,
+  },
+  datePickerPlaceholder: {
+    color: theme.colors.textSecondary,
   },
   
   // Dropdown styles
