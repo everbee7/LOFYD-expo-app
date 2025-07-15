@@ -17,7 +17,12 @@
       },      
       "android": {
         "buildType": "apk"
-      }
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.test.lofyd.com",
+        "EXPO_PUBLIC_AWS_REGION": "us-east-1",
+        "EXPO_PUBLIC_ENVIRONMENT": "Test"
+      }  
     },
     "production": {
       "autoIncrement": true,
