@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DatePicker from 'react-native-date-picker';
 import { useTheme } from '../../contexts/ThemeContext';
 
 // Import your custom components
@@ -102,26 +102,14 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
     setShowFrequencyModal(false);
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-    }
-    
-    if (selectedDate && !isNaN(selectedDate.getTime())) {
-      setSelectedDate(selectedDate);
-      // Format date as MM/DD/YYYY
-      const formattedDate = selectedDate.toLocaleDateString('en-US');
-      setFormData({ ...formData, birthDate: formattedDate });
-    }
-    
-    // For Android, if user cancels
-    if (Platform.OS === 'android' && !selectedDate) {
-      setShowDatePicker(false);
-    }
+  const handleDateConfirm = (date: Date) => {
+    setShowDatePicker(false);
+    setSelectedDate(date);
+    const formattedDate = date.toLocaleDateString('en-US');
+    setFormData({ ...formData, birthDate: formattedDate });
   };
 
-  const handleDatePickerDone = () => {
-    // Date is already updated in handleDateChange
+  const handleDateCancel = () => {
     setShowDatePicker(false);
   };
 
@@ -156,40 +144,21 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
             />
           </TouchableOpacity>
           
-          {/* iOS DateTimePicker - inline style */}
-          {showDatePicker && Platform.OS === 'ios' && (
-            <View style={styles.iosDatePickerContainer}>
-              <View style={styles.iosDatePickerHeader}>
-                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                  <Text style={styles.iosDatePickerCancel}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleDatePickerDone}>
-                  <Text style={styles.iosDatePickerDone}>Done</Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="spinner"
-                onChange={handleDateChange}
-                maximumDate={new Date()}
-                minimumDate={new Date(1900, 0, 1)}
-                style={styles.iosDatePickerStyle}
-              />
-            </View>
-          )}
-          
-          {/* Android DateTimePicker */}
-          {showDatePicker && Platform.OS === 'android' && (
-            <DateTimePicker
-              value={selectedDate}
-              mode="date"
-              display="default"
-              onChange={handleDateChange}
-              maximumDate={new Date()}
-              minimumDate={new Date(1900, 0, 1)}
-            />
-          )}
+          {/* react-native-date-picker */}
+          <DatePicker
+            modal
+            open={showDatePicker}
+            date={selectedDate}
+            mode="date"
+            maximumDate={new Date()}
+            minimumDate={new Date(1900, 0, 1)}
+            onConfirm={handleDateConfirm}
+            onCancel={handleDateCancel}
+            title="Select Birthday"
+            confirmText="Done"
+            cancelText="Cancel"
+            theme={'light'}
+          />
         </View>
       );
     } catch (error) {
@@ -301,6 +270,7 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
             color={theme.colors.primary} 
             style={styles.loadingSpinner}
           />
+          <Text style={styles.loadingText}>Saving...</Text>
         </View>
       </View>
     </Modal>
@@ -351,7 +321,7 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
           style={isEditing ? {} : styles.readOnlyInput}
         />
 
-        {/* Birthday DateTimePicker */}
+        {/* Birthday DatePicker */}
         <BirthdayDatePicker />
 
         {/* Home Zipcode Input */}
@@ -456,7 +426,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
   },
   
-  // DateTimePicker styles
+  // DatePicker styles
   datePickerContainer: {
     marginBottom: theme.spacing.md,
   },
@@ -488,40 +458,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   datePickerPlaceholder: {
     color: theme.colors.textSecondary,
-  },
-  
-  // iOS DateTimePicker inline styles
-  iosDatePickerContainer: {
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginTop: theme.spacing.sm,
-    overflow: 'hidden',
-  },
-  iosDatePickerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    backgroundColor: theme.colors.inputBackground || theme.colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  iosDatePickerCancel: {
-    color: theme.colors.textSecondary,
-    fontSize: 16,
-    fontWeight: '400',
-  },
-  iosDatePickerDone: {
-    color: theme.colors.primary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  iosDatePickerStyle: {
-    backgroundColor: theme.colors.background,
-    height: 180,
   },
   
   // Dropdown styles
@@ -634,6 +570,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     elevation: 5,
   },
   loadingSpinner: {
+    marginBottom: theme.spacing.md,
   },
   loadingText: {
     ...theme.typography.body,
