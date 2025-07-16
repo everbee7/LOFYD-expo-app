@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -88,12 +88,23 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
     if (selectedDate) {
       setSelectedDate(selectedDate);
       // Format date as MM/DD/YYYY
       const formattedDate = selectedDate.toLocaleDateString('en-US');
       setFormData({ ...formData, birthDate: formattedDate });
+      
+      // Close picker on iOS after selection
+      if (Platform.OS === 'ios') {
+        setShowDatePicker(false);
+      }
+    } else if (Platform.OS === 'android') {
+      // User cancelled on Android
+      setShowDatePicker(false);
     }
   };
 
@@ -126,7 +137,17 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
         />
       </TouchableOpacity>
       
-      {showDatePicker && (
+      {showDatePicker && Platform.OS === 'ios' && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+          maximumDate={new Date()}
+        />
+      )}
+      
+      {showDatePicker && Platform.OS === 'android' && (
         <DateTimePicker
           value={selectedDate}
           mode="date"
@@ -207,6 +228,26 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
             )}
             style={styles.modalList}
           />
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // Loading Spinner Component
+  const LoadingSpinner = () => (
+    <Modal
+      visible={loading}
+      transparent={true}
+      animationType="fade"
+    >
+      <View style={styles.loadingOverlay}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator 
+            size="large" 
+            color={theme.colors.primary} 
+            style={styles.loadingSpinner}
+          />
+          <Text style={styles.loadingText}>Saving...</Text>
         </View>
       </View>
     </Modal>
@@ -319,6 +360,9 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
 
       {/* Frequency Modal */}
       <FrequencyModal />
+
+      {/* Loading Spinner */}
+      <LoadingSpinner />
     </View>
   );
 };
@@ -478,6 +522,37 @@ const createStyles = (theme: any) => StyleSheet.create({
   modalOptionTextSelected: {
     color: theme.colors.primary,
     fontWeight: '600',
+  },
+
+  // Loading Spinner styles
+  loadingOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingContainer: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.xl,
+    alignItems: 'center',
+    minWidth: 120,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingSpinner: {
+    marginBottom: theme.spacing.md,
+  },
+  loadingText: {
+    ...theme.typography.body,
+    color: theme.colors.text,
+    textAlign: 'center',
   },
 });
 
