@@ -48,14 +48,27 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
+  // Helper function to create a safe date
+  const createSafeDate = (dateString: string): Date => {
+    if (!dateString) return new Date(1990, 0, 1); // Default fallback
+    
+    const date = new Date(dateString);
+    if (!isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2030) {
+      return date;
+    }
+    return new Date(1990, 0, 1); // Fallback to safe date
+  };
+
   useEffect(() => {
     setFormData(userInfo);
-    // Initialize date from birthDate string
-    if (userInfo.birthDate) {
-      const date = new Date(userInfo.birthDate);
-      if (!isNaN(date.getTime())) {
-        setSelectedDate(date);
-      }
+    
+    // Initialize date with better validation
+    try {
+      const safeDate = createSafeDate(userInfo.birthDate);
+      setSelectedDate(safeDate);
+    } catch (error) {
+      console.error('Date initialization error:', error);
+      setSelectedDate(new Date(1990, 0, 1));
     }
   }, [userInfo]);
 
@@ -73,12 +86,14 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
   const handleCancel = () => {
     setFormData(userInfo);
     setIsEditing(false);
+    
     // Reset date picker
-    if (userInfo.birthDate) {
-      const date = new Date(userInfo.birthDate);
-      if (!isNaN(date.getTime())) {
-        setSelectedDate(date);
-      }
+    try {
+      const safeDate = createSafeDate(userInfo.birthDate);
+      setSelectedDate(safeDate);
+    } catch (error) {
+      console.error('Date reset error:', error);
+      setSelectedDate(new Date(1990, 0, 1));
     }
   };
 
@@ -92,20 +107,22 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
       setShowDatePicker(false);
     }
     
-    if (selectedDate) {
+    if (selectedDate && !isNaN(selectedDate.getTime())) {
       setSelectedDate(selectedDate);
       // Format date as MM/DD/YYYY
       const formattedDate = selectedDate.toLocaleDateString('en-US');
       setFormData({ ...formData, birthDate: formattedDate });
-      
-      // Close picker on iOS after selection
-      if (Platform.OS === 'ios') {
-        setShowDatePicker(false);
-      }
-    } else if (Platform.OS === 'android') {
-      // User cancelled on Android
+    }
+    
+    // For Android, if user cancels
+    if (Platform.OS === 'android' && !selectedDate) {
       setShowDatePicker(false);
     }
+  };
+
+  const handleDatePickerDone = () => {
+    // Date is already updated in handleDateChange
+    setShowDatePicker(false);
   };
 
   const getFrequencyLabel = (value: string) => {
@@ -113,51 +130,88 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
     return option ? option.label : value;
   };
 
-  const BirthdayDatePicker = () => (
-    <View style={styles.datePickerContainer}>
-      <Text style={styles.datePickerLabel}>Birthday</Text>
-      <TouchableOpacity
-        style={[
-          styles.datePickerButton,
-          !isEditing && styles.datePickerButtonDisabled
-        ]}
-        onPress={() => isEditing && setShowDatePicker(true)}
-        disabled={!isEditing}
-      >
-        <Text style={[
-          styles.datePickerButtonText,
-          !formData.birthDate && styles.datePickerPlaceholder
-        ]}>
-          {formData.birthDate || 'Select birthday'}
-        </Text>
-        <Ionicons 
-          name="calendar-outline" 
-          size={20} 
-          color={isEditing ? theme.colors.primary : theme.colors.textSecondary} 
-        />
-      </TouchableOpacity>
-      
-      {showDatePicker && Platform.OS === 'ios' && (
-        <DateTimePicker
-          value={selectedDate}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-          maximumDate={new Date()}
-        />
-      )}
-      
-      {showDatePicker && Platform.OS === 'android' && (
-        <DateTimePicker
-          value={selectedDate}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-          maximumDate={new Date()}
-        />
-      )}
-    </View>
-  );
+  const BirthdayDatePicker = () => {
+    try {
+      return (
+        <View style={styles.datePickerContainer}>
+          <Text style={styles.datePickerLabel}>Birthday</Text>
+          <TouchableOpacity
+            style={[
+              styles.datePickerButton,
+              !isEditing && styles.datePickerButtonDisabled
+            ]}
+            onPress={() => isEditing && setShowDatePicker(true)}
+            disabled={!isEditing}
+          >
+            <Text style={[
+              styles.datePickerButtonText,
+              !formData.birthDate && styles.datePickerPlaceholder
+            ]}>
+              {formData.birthDate || 'Select birthday'}
+            </Text>
+            <Ionicons 
+              name="calendar-outline" 
+              size={20} 
+              color={isEditing ? theme.colors.primary : theme.colors.textSecondary} 
+            />
+          </TouchableOpacity>
+          
+          {/* iOS DateTimePicker - inline style */}
+          {showDatePicker && Platform.OS === 'ios' && (
+            <View style={styles.iosDatePickerContainer}>
+              <View style={styles.iosDatePickerHeader}>
+                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                  <Text style={styles.iosDatePickerCancel}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleDatePickerDone}>
+                  <Text style={styles.iosDatePickerDone}>Done</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display="spinner"
+                onChange={handleDateChange}
+                maximumDate={new Date()}
+                minimumDate={new Date(1900, 0, 1)}
+                style={styles.iosDatePickerStyle}
+              />
+            </View>
+          )}
+          
+          {/* Android DateTimePicker */}
+          {showDatePicker && Platform.OS === 'android' && (
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display="default"
+              onChange={handleDateChange}
+              maximumDate={new Date()}
+              minimumDate={new Date(1900, 0, 1)}
+            />
+          )}
+        </View>
+      );
+    } catch (error) {
+      console.error('DatePicker render error:', error);
+      return (
+        <View style={styles.datePickerContainer}>
+          <Text style={styles.datePickerLabel}>Birthday</Text>
+          <TouchableOpacity
+            style={[
+              styles.datePickerButton,
+              styles.datePickerButtonDisabled
+            ]}
+            disabled={true}
+          >
+            <Text style={styles.datePickerPlaceholder}>
+              Date picker temporarily unavailable
+            </Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+  };
 
   const FrequencyDropdown = () => (
     <View style={styles.dropdownContainer}>
@@ -247,7 +301,6 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
             color={theme.colors.primary} 
             style={styles.loadingSpinner}
           />
-          <Text style={styles.loadingText}>Saving...</Text>
         </View>
       </View>
     </Modal>
@@ -437,6 +490,40 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.textSecondary,
   },
   
+  // iOS DateTimePicker inline styles
+  iosDatePickerContainer: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    marginTop: theme.spacing.sm,
+    overflow: 'hidden',
+  },
+  iosDatePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.inputBackground || theme.colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  iosDatePickerCancel: {
+    color: theme.colors.textSecondary,
+    fontSize: 16,
+    fontWeight: '400',
+  },
+  iosDatePickerDone: {
+    color: theme.colors.primary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  iosDatePickerStyle: {
+    backgroundColor: theme.colors.background,
+    height: 180,
+  },
+  
   // Dropdown styles
   dropdownContainer: {
     marginBottom: theme.spacing.md,
@@ -547,7 +634,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     elevation: 5,
   },
   loadingSpinner: {
-    marginBottom: theme.spacing.md,
   },
   loadingText: {
     ...theme.typography.body,
