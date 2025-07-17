@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DatePicker from 'react-native-date-picker';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -7,6 +7,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 // Import your custom components
 import Input from '../common/Input';
 import Button from '../common/Button';
+import LoadingOverlay from '../common/LoadingOverlay';
 
 interface UserInfo {
   firstName: string;
@@ -22,6 +23,7 @@ interface MyInfoSectionProps {
   onSave: (updatedInfo: UserInfo) => Promise<void>;
   onLogout: () => void;
   loading?: boolean;
+  loadingText?: string;
 }
 
 // Frequency options
@@ -39,13 +41,14 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
   userInfo,
   onSave,
   onLogout,
-  loading = false
+  loading = false,
+  loadingText = "Getting the info..."
 }) => {
   const { theme } = useTheme();
   const [formData, setFormData] = useState<UserInfo>(userInfo);
   const [isEditing, setIsEditing] = useState(false);
-  const [showFrequencyModal, setShowFrequencyModal] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showFrequencyDropdown, setShowFrequencyDropdown] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   // Helper function to create a safe date
@@ -80,6 +83,7 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
       setIsEditing(false);
     } catch (error) {
       console.error('Save error:', error);
+      Alert.alert('Error', 'Failed to save profile. Please try again.');
     }
   };
 
@@ -97,9 +101,15 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
     }
   };
 
-  const handleFrequencySelect = (eatOutFrequency: string) => {
-    setFormData({ ...formData, eatOutFrequency });
-    setShowFrequencyModal(false);
+  const handleFrequencySelect = (value: string) => {
+    setFormData({ ...formData, eatOutFrequency: value });
+    setShowFrequencyDropdown(false);
+  };
+
+  const toggleFrequencyDropdown = () => {
+    if (isEditing) {
+      setShowFrequencyDropdown(true);
+    }
   };
 
   const handleDateConfirm = (date: Date) => {
@@ -190,7 +200,7 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
           styles.dropdownButton,
           !isEditing && styles.dropdownButtonDisabled
         ]}
-        onPress={() => isEditing && setShowFrequencyModal(true)}
+        onPress={toggleFrequencyDropdown}
         disabled={!isEditing}
       >
         <Text style={[
@@ -200,80 +210,65 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
           {formData.eatOutFrequency ? getFrequencyLabel(formData.eatOutFrequency) : 'Select frequency'}
         </Text>
         <Ionicons 
-          name="chevron-down" 
+          name="chevron-down"
           size={20} 
           color={isEditing ? theme.colors.primary : theme.colors.textSecondary} 
         />
       </TouchableOpacity>
-    </View>
-  );
-
-  const FrequencyModal = () => (
-    <Modal
-      visible={showFrequencyModal}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={() => setShowFrequencyModal(false)}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>How often do you go out to eat?</Text>
-            <TouchableOpacity 
-              onPress={() => setShowFrequencyModal(false)}
-              style={styles.closeButton}
-            >
-              <Ionicons name="close" size={24} color={theme.colors.text} />
-            </TouchableOpacity>
-          </View>
-          
-          <FlatList
-            data={FREQUENCY_OPTIONS}
-            keyExtractor={(item) => item.value}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.modalOption,
-                  formData.eatOutFrequency === item.value && styles.modalOptionSelected
-                ]}
-                onPress={() => handleFrequencySelect(item.value)}
+      
+      {/* Bottom Sheet Modal */}
+      <Modal
+        visible={showFrequencyDropdown}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowFrequencyDropdown(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setShowFrequencyDropdown(false)}
+          />
+          <View style={styles.bottomSheet}>
+            {/* Header */}
+            <View style={styles.bottomSheetHeader}>
+              <View style={styles.bottomSheetHandle} />
+              <Text style={styles.bottomSheetTitle}>How often do you go out to eat?</Text>
+              <TouchableOpacity 
+                onPress={() => setShowFrequencyDropdown(false)}
+                style={styles.bottomSheetClose}
               >
-                <Text style={[
-                  styles.modalOptionText,
-                  formData.eatOutFrequency === item.value && styles.modalOptionTextSelected
-                ]}>
-                  {item.label}
-                </Text>
-                {formData.eatOutFrequency === item.value && (
-                  <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
-                )}
+                <Ionicons name="close" size={24} color={theme.colors.text} />
               </TouchableOpacity>
-            )}
-            style={styles.modalList}
-          />
+            </View>
+            
+            {/* Options */}
+            <ScrollView style={styles.bottomSheetContent}>
+              {FREQUENCY_OPTIONS.map((option, index) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[
+                    styles.bottomSheetOption,
+                    index === FREQUENCY_OPTIONS.length - 1 && styles.bottomSheetOptionLast
+                  ]}
+                  onPress={() => handleFrequencySelect(option.value)}
+                >
+                  <Text style={[
+                    styles.bottomSheetOptionText,
+                    formData.eatOutFrequency === option.value && styles.bottomSheetOptionTextSelected
+                  ]}>
+                    {option.label}
+                  </Text>
+                  {formData.eatOutFrequency === option.value && (
+                    <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
         </View>
-      </View>
-    </Modal>
-  );
-
-  // Loading Spinner Component
-  const LoadingSpinner = () => (
-    <Modal
-      visible={loading}
-      transparent={true}
-      animationType="fade"
-    >
-      <View style={styles.loadingOverlay}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator 
-            size="large" 
-            color={theme.colors.primary} 
-            style={styles.loadingSpinner}
-          />
-          <Text style={styles.loadingText}>Saving...</Text>
-        </View>
-      </View>
-    </Modal>
+      </Modal>
+    </View>
   );
 
   return (
@@ -381,11 +376,11 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
         )}
       </View>
 
-      {/* Frequency Modal */}
-      <FrequencyModal />
-
-      {/* Loading Spinner */}
-      <LoadingSpinner />
+      {/* Loading Overlay */}
+      <LoadingOverlay 
+        visible={loading}
+        text={loadingText}
+      />
     </View>
   );
 };
@@ -493,89 +488,74 @@ const createStyles = (theme: any) => StyleSheet.create({
   dropdownPlaceholder: {
     color: theme.colors.textSecondary,
   },
-  
-  // Modal styles
+
+  // Bottom Sheet Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
-  modalContainer: {
-    backgroundColor: theme.colors.background,
-    borderTopLeftRadius: theme.borderRadius.lg,
-    borderTopRightRadius: theme.borderRadius.lg,
-    maxHeight: '60%',
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  modalHeader: {
+  bottomSheet: {
+    backgroundColor: theme.colors.background,
+    borderTopLeftRadius: theme.borderRadius.xl || 20,
+    borderTopRightRadius: theme.borderRadius.xl || 20,
+    maxHeight: '70%',
+    paddingBottom: 34, // Safe area bottom padding
+  },
+  bottomSheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+    position: 'relative',
   },
-  modalTitle: {
+  bottomSheetHandle: {
+    position: 'absolute',
+    top: -8,
+    left: '50%',
+    marginLeft: -20,
+    width: 40,
+    height: 4,
+    backgroundColor: theme.colors.textSecondary,
+    borderRadius: 2,
+  },
+  bottomSheetTitle: {
     ...theme.typography.h3,
     color: theme.colors.text,
     flex: 1,
+    textAlign: 'center',
   },
-  closeButton: {
+  bottomSheetClose: {
     padding: theme.spacing.xs,
   },
-  modalList: {
+  bottomSheetContent: {
     paddingHorizontal: theme.spacing.lg,
   },
-  modalOption: {
+  bottomSheetOption: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: theme.spacing.md,
+    paddingVertical: theme.spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
-  modalOptionSelected: {
-    // backgroundColor: theme.colors.primaryLight || theme.colors.primary + '10',
+  bottomSheetOptionLast: {
+    borderBottomWidth: 0,
   },
-  modalOptionText: {
+  bottomSheetOptionText: {
     ...theme.typography.body,
+    fontSize: 16,
     color: theme.colors.text,
     flex: 1,
   },
-  modalOptionTextSelected: {
+  bottomSheetOptionTextSelected: {
     color: theme.colors.primary,
     fontWeight: '600',
-  },
-
-  // Loading Spinner styles
-  loadingOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingContainer: {
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.xl,
-    alignItems: 'center',
-    minWidth: 120,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  loadingSpinner: {
-    marginBottom: theme.spacing.md,
-  },
-  loadingText: {
-    ...theme.typography.body,
-    color: theme.colors.text,
-    textAlign: 'center',
   },
 });
 

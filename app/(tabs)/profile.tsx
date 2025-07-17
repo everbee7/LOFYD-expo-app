@@ -48,6 +48,7 @@ export default function ProfileScreen() {
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('myInfo');
   const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState("");
   const { logout, user, updateUserData } = useAuthStore();
 
   // Sample user data
@@ -124,6 +125,7 @@ export default function ProfileScreen() {
     try {
       const initUserInfo = async () => {
         setLoading(true);
+        setLoadingText("Getting the info...");
         const data = await authService.getUserData();
         const updatedUserInfo = {
           ...userInfo,
@@ -197,6 +199,7 @@ export default function ProfileScreen() {
 
   const handleSaveUserInfo = async (updatedInfo: UserInfo) => {
     setLoading(true);
+    setLoadingText("Saving...");
     try {
       console.log('Saving user info:', updatedInfo);
       await updateUserData({
@@ -361,6 +364,7 @@ export default function ProfileScreen() {
             onSave={handleSaveUserInfo}
             onLogout={handleLogout}
             loading={loading}
+            loadingText={loadingText}
           />
         );
       case 'settings':
