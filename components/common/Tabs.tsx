@@ -58,40 +58,22 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   tabsWrapper: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    gap: theme.spacing.md,
   },
   tab: {
-    flex: 1,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-    borderRadius: theme.borderRadius.md,
+    width: 120,
+    padding: theme.spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 44,
+    borderWidth: 1,
   },
   activeTab: {
     backgroundColor: theme.colors.primary,
-    shadowColor: theme.colors.primary,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: theme.colors.primary,
   },
   inactiveTab: {
-    backgroundColor: 'transparent',
+    backgroundColor: '#f3f3f3',
+    borderColor: theme.colors.border,
   },
   tabText: {
     ...theme.typography.button,
@@ -102,7 +84,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.background,
   },
   inactiveTabText: {
-    color: theme.colors.text,
+    color: theme.colors.textSecondary,
   },
 });
 

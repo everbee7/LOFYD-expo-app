@@ -37,6 +37,141 @@ export default function LocationDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Utility function to format phone numbers
+  const formatPhoneNumber = (phone: string): string => {
+    if (!phone) return '';
+    
+    // Remove all non-digit characters
+    const cleaned = phone.replace(/\D/g, '');
+    
+    // Format based on length
+    if (cleaned.length === 10) {
+      return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    } else if (cleaned.length === 11 && cleaned.startsWith('1')) {
+      return `+1 (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+    }
+    
+    // Return original if format doesn't match expected patterns
+    return phone;
+  };
+
+  // Utility function to convert 24-hour to 12-hour format
+  const convertTo12Hour = (time24: string): string => {
+    if (!time24) return '';
+    
+    // Handle different time formats
+    const timeRegex = /^(\d{1,2}):?(\d{2})$/;
+    const match = time24.match(timeRegex);
+    
+    if (!match) return time24; // Return original if format doesn't match
+    
+    let hours = parseInt(match[1]);
+    const minutes = match[2];
+    
+    if (hours === 0) {
+      return `12:${minutes} AM`;
+    } else if (hours < 12) {
+      return `${hours}:${minutes} AM`;
+    } else if (hours === 12) {
+      return `12:${minutes} PM`;
+    } else {
+      return `${hours - 12}:${minutes} PM`;
+    }
+  };
+
+  // Utility function to check if location is currently open
+  const isLocationOpen = (locationHours: any[], timezone: string): boolean => {
+    if (!locationHours || locationHours.length === 0 || !timezone) return false;
+
+    try {
+      // Get current time in the location's timezone
+      const now = new Date();
+      
+      // Get current day and time in the location's timezone
+      const currentDay = now.toLocaleDateString('en-US', { 
+        weekday: 'long',
+        timeZone: timezone 
+      });
+      
+      const currentHour = parseInt(now.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        hour12: false,
+        timeZone: timezone 
+      }));
+      
+      const currentMinute = parseInt(now.toLocaleTimeString('en-US', { 
+        minute: '2-digit',
+        timeZone: timezone 
+      }));
+      
+      const currentTimeInMinutes = currentHour * 60 + currentMinute;
+
+      // Days of the week array for getting previous day
+      const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const currentDayIndex = daysOfWeek.indexOf(currentDay);
+      const previousDayIndex = (currentDayIndex - 1 + 7) % 7;
+      const previousDay = daysOfWeek[previousDayIndex];
+
+      // Check if we're in the early morning hours (before 6 AM) and might be in yesterday's overnight period
+      if (currentTimeInMinutes < 360) { // Before 6:00 AM
+        const yesterdayHours = locationHours.find(h => h.day.toLowerCase() === previousDay.toLowerCase());
+        
+        if (yesterdayHours && !yesterdayHours.isClosed) {
+          // Parse yesterday's times
+          const yesterdayOpenTime = yesterdayHours.open;
+          const yesterdayCloseTime = yesterdayHours.close;
+          
+          const yesterdayOpenHour = parseInt(yesterdayOpenTime.split(':')[0]);
+          const yesterdayOpenMinute = parseInt(yesterdayOpenTime.split(':')[1]);
+          const yesterdayCloseHour = parseInt(yesterdayCloseTime.split(':')[0]);
+          const yesterdayCloseMinute = parseInt(yesterdayCloseTime.split(':')[1]);
+          
+          const yesterdayOpenTimeInMinutes = yesterdayOpenHour * 60 + yesterdayOpenMinute;
+          const yesterdayCloseTimeInMinutes = yesterdayCloseHour * 60 + yesterdayCloseMinute;
+          
+          // If yesterday's closing time is less than opening time, it means it closes in the early morning
+          if (yesterdayCloseTimeInMinutes < yesterdayOpenTimeInMinutes) {
+            // Check if current time is before yesterday's closing time
+            if (currentTimeInMinutes < yesterdayCloseTimeInMinutes) {
+              return true;
+            }
+          }
+        }
+      }
+
+      // Find today's hours
+      const todayHours = locationHours.find(h => h.day.toLowerCase() === currentDay.toLowerCase());
+      
+      if (!todayHours || todayHours.isClosed) {
+        return false;
+      }
+
+      // Parse open and close times for today
+      const openTime = todayHours.open;
+      const closeTime = todayHours.close;
+      
+      const openHour = parseInt(openTime.split(':')[0]);
+      const openMinute = parseInt(openTime.split(':')[1]);
+      const closeHour = parseInt(closeTime.split(':')[0]);
+      const closeMinute = parseInt(closeTime.split(':')[1]);
+      
+      const openTimeInMinutes = openHour * 60 + openMinute;
+      const closeTimeInMinutes = closeHour * 60 + closeMinute;
+
+      // Handle overnight hours (close time is next day)
+      if (closeTimeInMinutes < openTimeInMinutes) {
+        // Open past midnight - check if current time is after opening OR before closing (next day)
+        return currentTimeInMinutes >= openTimeInMinutes || currentTimeInMinutes < closeTimeInMinutes;
+      }
+      
+      // Normal hours - same day
+      return currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes < closeTimeInMinutes;
+    } catch (error) {
+      console.error('Error checking if location is open:', error);
+      return false;
+    }
+  };
+
   // Load location and specials data
   const loadData = useCallback(async () => {
     if (!id || typeof id !== 'string') return;
@@ -88,10 +223,21 @@ export default function LocationDetail() {
       if (!location) return;
 
       const fullAddress = `${location.street}, ${location.city}, ${location.state} ${location.postalCode}`;
+      
+      // Create deep link URL
+      let deepLinkUrl = '';
+      if (selectedSpecial) {
+        deepLinkUrl = `lofyd://location/${location.id}/special/${selectedSpecial.id}`;
+      } else {
+        deepLinkUrl = `lofyd://location/${location.id}`;
+      }
+
       const shareContent = {
-        title: location.name,
-        message: `Check out ${location.name}!\n\nAddress: ${fullAddress}\n${location.phone ? `Phone: ${location.phone}\n` : ''}${location.description ? `\n${location.description}` : ''}`,
-        url: undefined, // You can add your app's deep link here if you have one
+        title: selectedSpecial ? selectedSpecial.title : location.name,
+        message: selectedSpecial 
+          ? `Check out this special at ${location.name}!\n\n${selectedSpecial.title}\n${selectedSpecial.description}\n\nAddress: ${fullAddress}\n${location.phone ? `Phone: ${formatPhoneNumber(location.phone)}\n` : ''}\n${deepLinkUrl}\n\nPowered by LOFYD`
+          : `Check out ${location.name}!\n\nAddress: ${fullAddress}\n${location.phone ? `Phone: ${formatPhoneNumber(location.phone)}\n` : ''}${location.description ? `\n${location.description}` : ''}\n\n${deepLinkUrl}\n\nPowered by LOFYD`,
+        url: deepLinkUrl,
       };
 
       const result = await Share.share(shareContent);
@@ -105,7 +251,7 @@ export default function LocationDetail() {
     }
   };
 
-  // Complete handleDirections function
+  // Updated handleDirections function with map selection
   const handleDirections = async () => {
     try {
       if (!location) return;
@@ -169,58 +315,6 @@ export default function LocationDetail() {
     }
   };
 
-  // Alternative handleDirections with user choice (optional)
-  const handleDirectionsWithChoice = () => {
-    if (!location) return;
-
-    const { coordinates } = location;
-    const fullAddress = `${location.street}, ${location.city}, ${location.state} ${location.postalCode}`;
-
-    Alert.alert(
-      'Get Directions',
-      'Choose your preferred map application:',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Google Maps',
-          onPress: async () => {
-            const url = coordinates && coordinates.Latitude !== 0 && coordinates.Longitude !== 0
-              ? `https://maps.google.com/maps?daddr=${coordinates.Latitude},${coordinates.Longitude}`
-              : `https://maps.google.com/maps?daddr=${encodeURIComponent(fullAddress)}`;
-
-            try {
-              await Linking.openURL(url);
-            } catch (error) {
-              Alert.alert('Error', 'Unable to open Google Maps');
-            }
-          },
-        },
-        ...(Platform.OS === 'ios' ? [{
-          text: 'Apple Maps',
-          onPress: async () => {
-            const url = coordinates && coordinates.Latitude !== 0 && coordinates.Longitude !== 0
-              ? `maps://app?daddr=${coordinates.Latitude},${coordinates.Longitude}`
-              : `maps://app?daddr=${encodeURIComponent(fullAddress)}`;
-
-            try {
-              const canOpen = await Linking.canOpenURL(url);
-              if (canOpen) {
-                await Linking.openURL(url);
-              } else {
-                Alert.alert('Error', 'Apple Maps is not available');
-              }
-            } catch (error) {
-              Alert.alert('Error', 'Unable to open Apple Maps');
-            }
-          },
-        }] : []),
-      ]
-    );
-  };
-
   const handleCall = async () => {
     try {
       if (!location?.phone) {
@@ -228,7 +322,7 @@ export default function LocationDetail() {
         return;
       }
 
-      const phoneNumber = location.phone;
+      const phoneNumber = location.phone.replace(/\D/g, ''); // Remove all non-digit characters
       const phoneUrl = `tel:${phoneNumber}`;
 
       // Check if device can make phone calls
@@ -252,7 +346,9 @@ export default function LocationDetail() {
       if (dayHour.isClosed) {
         return `${dayHour.day}: Closed`;
       }
-      return `${dayHour.day}: ${dayHour.open} AM - ${dayHour.close} PM`;
+      const openTime = convertTo12Hour(dayHour.open);
+      const closeTime = convertTo12Hour(dayHour.close);
+      return `${dayHour.day}: ${openTime} - ${closeTime}`;
     });
   };
 
@@ -261,8 +357,18 @@ export default function LocationDetail() {
       return { isOpen: false, todayHours: 'Hours not available' };
     }
 
-    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    const timezone = location.timezone || 'America/New_York'; // Default timezone if not provided
+    const isOpen = isLocationOpen(location.locationHours, timezone);
+    
+    // Get current day in location's timezone using Intl.DateTimeFormat
+    const now = new Date();
+    const today = now.toLocaleDateString('en-US', { 
+      weekday: 'long',
+      timeZone: timezone 
+    });
+    
     const todayHours = location.locationHours.find(h => h.day.toLowerCase() === today.toLowerCase());
+    console.log('today', today, todayHours, timezone)
 
     if (!todayHours) {
       return { isOpen: false, todayHours: 'Hours not available' };
@@ -272,11 +378,12 @@ export default function LocationDetail() {
       return { isOpen: false, todayHours: `${todayHours.day}: Closed` };
     }
 
-    // Simple open/closed logic - you might want to implement more sophisticated time checking
-    const isOpen = true; // Simplified - implement actual time checking logic
+    const openTime = convertTo12Hour(todayHours.open);
+    const closeTime = convertTo12Hour(todayHours.close);
+
     return {
       isOpen,
-      todayHours: `${todayHours.day}: ${todayHours.open} AM - ${todayHours.close} PM`
+      todayHours: `${todayHours.day}: ${openTime} - ${closeTime}`
     };
   };
 
@@ -361,7 +468,9 @@ export default function LocationDetail() {
         <View style={styles.infoContainer}>
           <View style={styles.infoSection}>
             <Text style={styles.locationName}>{location.name}</Text>
-            <Text style={styles.address}>{fullAddress}</Text>
+            <TouchableOpacity onPress={handleDirections}>
+              <Text style={styles.address}>{fullAddress}</Text>
+            </TouchableOpacity>
 
             <View style={styles.statusRow}>
               <View style={[styles.statusBadge, isOpen && styles.statusBadgeOpen]}>
@@ -376,7 +485,7 @@ export default function LocationDetail() {
             <TouchableOpacity onPress={handleShare} style={styles.actionButton}>
               <Ionicons name="share-outline" size={20} color={theme.colors.text} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleDirectionsWithChoice} style={styles.actionButton}>
+            <TouchableOpacity onPress={handleDirections} style={styles.actionButton}>
               <Ionicons name="navigate-outline" size={20} color={theme.colors.text} />
             </TouchableOpacity>
             {location.phone && (
@@ -440,7 +549,9 @@ export default function LocationDetail() {
 
           {activeTab === 'Details' && (
             <View style={styles.detailsContainer}>
-              <Text style={styles.detailsText}>{location.description || 'No description available'}</Text>
+              {location.description && (
+                <Text style={styles.detailsText}>{location.description}</Text>
+              )}
 
               {location.neighborhood && (
                 <View style={styles.detailRow}>
@@ -451,13 +562,19 @@ export default function LocationDetail() {
 
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Address:</Text>
-                <Text style={styles.detailValue}>{fullAddress}</Text>
+                <TouchableOpacity onPress={handleDirections} style={styles.addressLink}>
+                  <Text style={styles.detailValue}>{fullAddress}</Text>
+                </TouchableOpacity>
               </View>
 
               {location.phone && (
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Phone:</Text>
-                  <Text style={styles.detailValue}>{location.phone}</Text>
+                  <TouchableOpacity onPress={handleCall}>
+                    <Text style={[styles.detailValue, styles.phoneLink]}>
+                      {formatPhoneNumber(location.phone)}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
 
@@ -515,11 +632,8 @@ export default function LocationDetail() {
         ]}>
           <View style={styles.restaurentDetailcontainer}>
             <View style={styles.restaurentImageWrap}>
-              <TouchableOpacity style={styles.restaurentBack} onPress={() => setSelectedSpecial(null)}>
-                <Image
-                  source={require('../../assets/images/allow-big-down.png')}
-                  style={styles.restaurentImageBack}
-                />
+              <TouchableOpacity style={styles.restaurentClose} onPress={() => setSelectedSpecial(null)}>
+                <Ionicons name="close" size={24} color={theme.colors.background} />
               </TouchableOpacity>
               <Image
                 source={selectedSpecial?.images && selectedSpecial.images.length > 0
@@ -656,6 +770,13 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontSize: 12,
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
+  },
+  addressLink: {
+    flex: 1,
+  },
+  phoneLink: {
+    color: theme.colors.primary,
+    textDecorationLine: 'underline',
   },
   statusRow: {
     flexDirection: 'row',
@@ -811,14 +932,14 @@ const createStyles = (theme: any) => StyleSheet.create({
     aspectRatio: 320 / 155,
     alignItems: 'center',
   },
-  restaurentBack: {
+  restaurentClose: {
     zIndex: 100,
     position: 'absolute',
     top: theme.spacing.md,
-  },
-  restaurentImageBack: {
-    width: 36,
-    height: 12,
+    right: theme.spacing.md,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    padding: theme.spacing.xs,
   },
   restaurentImage: {
     width: '100%',

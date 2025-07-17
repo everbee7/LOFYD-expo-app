@@ -360,7 +360,7 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
             <Button
               title="Cancel"
               onPress={handleCancel}
-              variant="ghost"
+              variant="outline"
               style={styles.editActionButton}
             />
 

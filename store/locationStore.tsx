@@ -4,7 +4,15 @@ import { locationService } from '../services/location';
 import { specialService } from '../services/special';
 import { LocationState, Special, Location, GetSpecialsRequest, GetLocationsRequest, FilterSetting } from '../types/location';
 
-const DEFAULT_LOCATION = 'New York, NY';
+// Import auth store to access user postal code
+let authStore: any = null;
+try {
+  authStore = require('../store/authStore').default;
+} catch (error) {
+  console.warn('Auth store not available');
+}
+
+const DEFAULT_LOCATION = '';
 const DEFAULT_RADIUS = 0.5;
 const DEFAULT_LIMIT = 20;
 
@@ -22,6 +30,10 @@ const useLocationStore = create<LocationState>((set, get) => ({
   locationType: 'locale',
   radiusInMiles: DEFAULT_RADIUS,
   sortBy: 'relevance',
+
+  // Device location (from GPS)
+  deviceLocation: '',
+  deviceLocationType: 'locale',
 
   // Active tab
   activeTab: 'Specials',
@@ -56,12 +68,21 @@ const useLocationStore = create<LocationState>((set, get) => ({
       const savedRadius = await AsyncStorage.getItem('searchRadius');
       const savedSortBy = await AsyncStorage.getItem('sortPreference');
       const savedTab = await AsyncStorage.getItem('activeTab');
+      const savedDeviceLocation = await AsyncStorage.getItem('deviceLocation');
 
       if (savedLocation) {
         const locationType = locationService.determineLocationType(savedLocation);
         set({
           searchLocation: savedLocation,
           locationType
+        });
+      }
+
+      if (savedDeviceLocation) {
+        const deviceLocationType = locationService.determineLocationType(savedDeviceLocation);
+        set({
+          deviceLocation: savedDeviceLocation,
+          deviceLocationType
         });
       }
 
@@ -94,6 +115,15 @@ const useLocationStore = create<LocationState>((set, get) => ({
     }
   },
 
+  // Set device location
+  setDeviceLocation: (location: string, locationType: 'locale' | 'postal' | 'coords') => {
+    set({
+      deviceLocation: location,
+      deviceLocationType: locationType,
+    });
+    AsyncStorage.setItem('deviceLocation', location);
+  },
+
   // Set active tab
   setActiveTab: (tab: 'Specials' | 'Locations') => {
     set({
@@ -103,6 +133,44 @@ const useLocationStore = create<LocationState>((set, get) => ({
     AsyncStorage.setItem('activeTab', tab);
     // Trigger search with current params for the new tab
     get().searchWithCurrentParams();
+  },
+
+  // Helper function to determine which location to use
+  getEffectiveLocation: () => {
+    const { searchLocation, deviceLocation } = get();
+    
+    // If user has entered a location, use it
+    if (searchLocation && searchLocation.trim()) {
+      return {
+        location: searchLocation,
+        locationType: get().locationType
+      };
+    }
+    
+    // Otherwise, use device location if available
+    if (deviceLocation && deviceLocation.trim()) {
+      return {
+        location: deviceLocation,
+        locationType: get().deviceLocationType
+      };
+    }
+    
+    // Fallback to user's postal code from auth store
+    if (authStore) {
+      const authState = authStore.getState();
+      if (authState.user?.postalCode) {
+        return {
+          location: authState.user.postalCode,
+          locationType: 'postal' as const
+        };
+      }
+    }
+    
+    // Final fallback to default
+    return {
+      location: 'New York, NY',
+      locationType: 'locale' as const
+    };
   },
 
   // Get specials with current parameters
@@ -191,18 +259,21 @@ const useLocationStore = create<LocationState>((set, get) => ({
 
   // Load more data (pagination)
   loadMore: async () => {
-    const { pagination, searchLocation, locationType, radiusInMiles, sortBy, activeFilters, activeTab } = get();
+    const { pagination, radiusInMiles, sortBy, activeFilters, activeTab } = get();
 
     if (pagination.offset >= pagination.totalSize) {
       return; // No more data to load
     }
+
+    // Use effective location (user location or device location)
+    const { location, locationType } = get().getEffectiveLocation();
 
     try {
       set({ isLoading: true });
 
       if (activeTab === 'Specials') {
         const params: GetSpecialsRequest = {
-          location: searchLocation,
+          location,
           locationType,
           radiusInMiles,
           sortBy,
@@ -225,7 +296,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
         });
       } else {
         const params: GetLocationsRequest = {
-          location: searchLocation,
+          location,
           locationType,
           radiusInMiles,
           sortBy,
@@ -363,11 +434,14 @@ const useLocationStore = create<LocationState>((set, get) => ({
 
   // Search with current parameters
   searchWithCurrentParams: async () => {
-    const { searchLocation, locationType, radiusInMiles, sortBy, activeFilters, pagination, activeTab } = get();
+    const { radiusInMiles, sortBy, activeFilters, pagination, activeTab } = get();
+    
+    // Use effective location (user location or device location)
+    const { location, locationType } = get().getEffectiveLocation();
 
     if (activeTab === 'Specials') {
       const params: GetSpecialsRequest = {
-        location: searchLocation,
+        location,
         locationType,
         radiusInMiles,
         sortBy,
@@ -379,7 +453,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
       await get().getSpecials(params);
     } else {
       const params: GetLocationsRequest = {
-        location: searchLocation,
+        location,
         locationType,
         radiusInMiles,
         sortBy,
@@ -397,17 +471,17 @@ const useLocationStore = create<LocationState>((set, get) => ({
     await get().searchWithCurrentParams();
   },
 
-
   // Save current filter setting
   saveCurrentFilterSetting: (name: string) => {
-    const { activeTab, searchLocation, radiusInMiles, sortBy, activeFilters, filterSettingLog } = get();
+    const { activeTab, radiusInMiles, sortBy, activeFilters, filterSettingLog } = get();
+    const { location } = get().getEffectiveLocation();
 
     const newSetting: FilterSetting = {
       id: Date.now().toString(),
       name: name.trim(),
       timestamp: Date.now(),
       activeTab,
-      searchLocation,
+      searchLocation: location,
       radiusInMiles,
       sortBy,
       activeFilters: JSON.parse(JSON.stringify(activeFilters)), // Deep copy

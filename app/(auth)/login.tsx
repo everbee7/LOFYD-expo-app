@@ -7,11 +7,13 @@ import {
   Platform,
   ScrollView,
   Image,
-  Alert
+  Alert,
+  Text
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
-
+import Constants from 'expo-constants';
+import * as Application from 'expo-application';
 
 // Import auth components and services
 import LoginForm from '../../components/auth/LoginForm';
@@ -29,6 +31,10 @@ export default function LoginScreen() {
 
   const styles = createStyles(theme);
 
+  // Get dynamic values for footer
+  const version = Constants.expoConfig?.version || 'Unknown';
+  const build = Application.nativeBuildVersion || 'Unknown';
+  const env = process.env.EXPO_PUBLIC_ENVIRONMENT || 'Unknown';
 
   useEffect(() => {
     checkBiometricAvailability();
@@ -121,6 +127,10 @@ export default function LoginScreen() {
           {/* Form Section */}
           <LoginForm onLogin={handlePasswordLogin} loading={loading} />
         </ScrollView>
+
+        <Text style={styles.footerText}>
+          Version: {version} · Build #: {build} · Environment: {env}
+        </Text>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -141,7 +151,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.xxxl,
     paddingBottom: theme.spacing.xxl * 2,
   },
   logoSection: {
@@ -152,4 +162,8 @@ const createStyles = (theme: any) => StyleSheet.create({
     width: 164,
     height: 48,
   },
+  footerText: {
+    fontSize: 12,
+    textAlign: 'center',
+  }
 });

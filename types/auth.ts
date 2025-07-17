@@ -1,4 +1,3 @@
-
 export interface User {
   userId: string;
   email: string;
@@ -51,7 +50,7 @@ export interface LoginResponse {
     idToken: string;
     refreshToken: string;
     tokenType: string;
-  },
+  };
 }
 
 export interface TokenLoginRequest {
@@ -84,7 +83,7 @@ export interface RefreshTokenResponse {
     expiresAt: string;
     idToken: string;
     tokenType: string;
-  }
+  };
 }
 
 export interface ForgotPasswordRequest {
@@ -129,22 +128,28 @@ export interface AuthState {
   user: User | null;
   isLoading: boolean;
   error: string | null;
-
+  
   // Core auth methods
   initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<User>;
+  
   // Token login
   loginWithToken: (idToken: string) => Promise<User>;
   refreshToken: (userId: string, refreshToken: string) => Promise<User>;
+  
+  // Sign up methods
   signup: (signupData: SignUpRequest) => Promise<void>;
   confirmSignup: (email: string, confirmCode: string) => Promise<void>;
   logout: () => Promise<void>;
-
+  
   // Password reset methods
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (email: string, password: string, resetCode: string) => Promise<void>;
+  
+  // User profile methods
   updateUserData: (userData: UserProfileRequest) => Promise<void>;
-
+  
   // Utility methods
   clearError: () => void;
+  checkAndRequestLocationPermission: () => void;
 }

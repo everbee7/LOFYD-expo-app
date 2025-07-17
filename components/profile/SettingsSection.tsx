@@ -134,7 +134,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
     minHeight: 60,
   },
   leftContent: {

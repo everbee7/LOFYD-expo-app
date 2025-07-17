@@ -128,6 +128,10 @@ export interface LocationState {
   radiusInMiles: number;
   sortBy: SortType;
 
+  // Device location (from GPS)
+  deviceLocation: string;
+  deviceLocationType: LocationType;
+
   // Active tab
   activeTab: 'Specials' | 'Locations';
 
@@ -164,6 +168,7 @@ export interface LocationState {
 
   // Filter methods
   setLocation: (location: string, locationType: LocationType) => void;
+  setDeviceLocation: (location: string, locationType: LocationType) => void;
   setRadius: (radius: number) => void;
   setSortBy: (sortBy: SortType) => void;
   setFilters: (filters: Partial<LocationState['activeFilters']>) => void;
@@ -174,6 +179,9 @@ export interface LocationState {
   // Search methods
   searchWithCurrentParams: () => Promise<void>;
   refreshData: () => Promise<void>;
+
+  // Helper method to get effective location
+  getEffectiveLocation: () => { location: string; locationType: LocationType };
 
   // New methods for filter settings
   saveCurrentFilterSetting: (name: string) => void;

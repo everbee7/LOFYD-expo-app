@@ -11,7 +11,9 @@ import {
   SafeAreaView,
   Dimensions,
   ViewStyle,
-  Alert
+  Alert,
+  Platform,
+  Linking
 } from 'react-native';
 import { FontAwesome, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { ServiceType } from '@/types/location';
@@ -23,6 +25,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+
+// Use the same key as AuthStore and ProfileScreen
+const LOCATION_PERMISSION_KEY = 'userLocationPermissionStatus';
 
 interface FilterModalProps {
   visible: boolean;
@@ -43,6 +48,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
     sortBy,
     setActiveTab,
     setLocation,
+    setDeviceLocation,
     setRadius,
     setSortBy,
     clearFilters,
@@ -52,6 +58,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
   } = useLocationStore();
 
   const [tempSearchLocation, setTempSearchLocation] = useState('');
+  const [tempKeywords, setTempKeywords] = useState('');
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState<number[]>([]);
   const [selectedExperiences, setSelectedExperiences] = useState<string[]>([]);
@@ -63,6 +70,8 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isLocationEnabled, setIsLocationEnabled] = useState(false);
+  const [isLocationFocused, setIsLocationFocused] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{latitude: number, longitude: number} | null>(null);
 
   // Collapse states for each section
   const [collapsedSections, setCollapsedSections] = useState({
@@ -76,8 +85,11 @@ const FilterModal: React.FC<FilterModalProps> = ({
   useEffect(() => {
     const checkLocationPermission = async () => {
       try {
-        const locationPermission = await AsyncStorage.getItem('locationPermissionGranted');
-        const isEnabled = locationPermission ? JSON.parse(locationPermission) : false;
+        const storedPermissionStatus = await AsyncStorage.getItem(LOCATION_PERMISSION_KEY);
+        
+        // Determine if location is truly enabled
+        let isEnabled = storedPermissionStatus === 'granted';
+        
         setIsLocationEnabled(isEnabled);
       } catch (error) {
         console.error('Error checking location permission:', error);
@@ -90,11 +102,36 @@ const FilterModal: React.FC<FilterModalProps> = ({
     }
   }, [visible]);
 
+  // Get current location when modal opens
+  useEffect(() => {
+    const getCurrentLocation = async () => {
+      if (visible && isLocationEnabled) {
+        try {
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+            timeInterval: 10000,
+            distanceInterval: 100,
+          });
+          setCurrentLocation({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude
+          });
+        } catch (error) {
+          console.log('Could not get current location:', error);
+        }
+      }
+    };
+
+    getCurrentLocation();
+  }, [visible, isLocationEnabled]);
+
   // Initialize state with current store values when modal opens
   useFocusEffect(
     useCallback(() => {
       if (visible) {
         setTempSearchLocation(searchLocation);
+        // Convert keywords array to comma-separated string
+        setTempKeywords(activeFilters.keywords.join(', '));
         setSelectedServiceTypes([...activeFilters.serviceType]);
         setSelectedPriceRanges([...activeFilters.priceRange]);
         setSelectedExperiences([...activeFilters.experience]);
@@ -106,6 +143,64 @@ const FilterModal: React.FC<FilterModalProps> = ({
       }
     }, [visible, activeFilters, searchLocation, radiusInMiles, sortBy])
   )
+
+  // Function to handle map navigation
+  const handleMapNavigation = async () => {
+    let locationToUse = '';
+    
+    // Use filled location if available, otherwise use current location
+    if (tempSearchLocation.trim()) {
+      locationToUse = tempSearchLocation.trim();
+    } else if (currentLocation) {
+      locationToUse = `${currentLocation.latitude},${currentLocation.longitude}`;
+    } else if (isLocationEnabled) {
+      // Try to get current location if not already available
+      try {
+        setIsGettingLocation(true);
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+          timeInterval: 10000,
+          distanceInterval: 100,
+        });
+        locationToUse = `${location.coords.latitude},${location.coords.longitude}`;
+      } catch (error) {
+        Alert.alert('Error', 'Could not get your current location. Please enter a location manually or enable location services in your device settings.');
+        return;
+      } finally {
+        setIsGettingLocation(false);
+      }
+    } else {
+      Alert.alert('Location Required', 'Please enter a location or enable location services in your device settings to use this feature.');
+      return;
+    }
+
+    // Encode the location for URL
+    const encodedLocation = encodeURIComponent(locationToUse);
+    
+    try {
+      let mapUrl = '';
+      
+      if (Platform.OS === 'ios') {
+        // Apple Maps for iOS
+        mapUrl = `http://maps.apple.com/?q=${encodedLocation}`;
+      } else {
+        // Google Maps for Android
+        mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
+      }
+      
+      // Check if the URL can be opened
+      const supported = await Linking.canOpenURL(mapUrl);
+      
+      if (supported) {
+        await Linking.openURL(mapUrl);
+      } else {
+        Alert.alert('Error', 'Could not open maps application.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Could not open maps application.');
+      console.error('Map navigation error:', error);
+    }
+  };
 
   const serviceTypes = [{
     key: 'dine-in',
@@ -148,7 +243,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
   const sortOptions = [
     { value: 'relevance', label: 'Relevance' },
     { value: 'distance', label: 'Distance' },
-    { value: 'favorites', label: 'Favorites' }
+    // { value: 'favorites', label: 'Favorites' }
   ];
 
   const styles = createStyles(theme);
@@ -176,7 +271,73 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setActiveTab(tab);
   };
 
-  const handleApplyFilters = () => {
+  // Parse keywords from comma-separated string
+  const parseKeywords = (keywordString: string): string[] => {
+    if (!keywordString.trim()) return [];
+    return keywordString
+      .split(',')
+      .map(keyword => keyword.trim())
+      .filter(keyword => keyword.length > 0);
+  };
+
+  const handleApplyFilters = async () => {
+    // Get device location when applying filters
+    if (isLocationEnabled) {
+      try {
+        setIsGettingLocation(true);
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+          timeInterval: 10000,
+          distanceInterval: 100,
+        });
+
+        const { latitude, longitude } = location.coords;
+        
+        // Try to get human-readable address using reverse geocoding
+        try {
+          const [address] = await Location.reverseGeocodeAsync({
+            latitude,
+            longitude,
+          });
+
+          if (address) {
+            const formattedAddress = [
+              address.city,
+              address.region,
+              address.postalCode
+            ].filter(Boolean).join(', ');
+
+            if (formattedAddress) {
+              // Save device location as locale (human-readable address)
+              setDeviceLocation(formattedAddress, 'locale');
+            } else {
+              // Fallback to coordinates if no readable address
+              const coordinatesString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+              setDeviceLocation(coordinatesString, 'coords');
+            }
+          } else {
+            // Fallback to coordinates if no address found
+            const coordinatesString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+            setDeviceLocation(coordinatesString, 'coords');
+          }
+        } catch (reverseGeocodeError) {
+          console.log('Reverse geocoding failed, using coordinates:', reverseGeocodeError);
+          // Fallback to coordinates
+          const coordinatesString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+          setDeviceLocation(coordinatesString, 'coords');
+        }
+      } catch (error) {
+        console.log('Could not get device location:', error);
+        // Clear device location if failed
+        setDeviceLocation('', 'locale');
+      } finally {
+        setIsGettingLocation(false);
+      }
+    } else {
+      // Clear device location if location services disabled
+      setDeviceLocation('', 'locale');
+    }
+
     // Clear all filters first
     clearFilters();
 
@@ -184,6 +345,12 @@ const FilterModal: React.FC<FilterModalProps> = ({
     // Apply service type filters
     selectedServiceTypes.forEach(type => {
       addFilter('serviceType', type as ServiceType);
+    });
+
+    // Apply keyword filters
+    const keywordArray = parseKeywords(tempKeywords);
+    keywordArray.forEach(keyword => {
+      addFilter('keywords', keyword);
     });
 
     // Apply price range filters
@@ -207,9 +374,13 @@ const FilterModal: React.FC<FilterModalProps> = ({
     });
 
     // Update location if changed
-    if (tempSearchLocation.trim() && tempSearchLocation !== searchLocation) {
-      const locationType = locationService.determineLocationType(tempSearchLocation.trim());
-      setLocation(tempSearchLocation.trim(), locationType);
+    if (tempSearchLocation.trim() !== searchLocation) {
+      if (tempSearchLocation.trim()) {
+        const locationType = locationService.determineLocationType(tempSearchLocation.trim());
+        setLocation(tempSearchLocation.trim(), locationType);
+      } else {
+        setLocation('', 'locale');
+      }
     }
 
     // Update radius if changed
@@ -228,9 +399,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
     onClose();
   };
 
-  const handleSaveFilters = () => {
+  const handleSaveFilters = async () => {
     // First apply the filters, then show save modal
-    handleApplyFilters();
+    await handleApplyFilters();
     setShowSaveModal(true);
   };
 
@@ -243,6 +414,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setSelectedDistance(10);
     setSelectedSortBy('relevance');
     setTempSearchLocation('');
+    setTempKeywords('');
   };
 
   const handleSingleSelection = (
@@ -250,103 +422,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setSelectedItem: (item: any) => void
   ) => {
     setSelectedItem(item);
-  };
-
-  const getCurrentLocation = async () => {
-    try {
-      setIsGettingLocation(true);
-
-      // Get current position - permission should already be granted
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-        timeInterval: 10000,
-        distanceInterval: 100,
-      });
-
-      const { latitude, longitude } = location.coords;
-
-      // Convert coordinates to location string
-      const coordinatesString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
-
-      // Update the search location input
-      setTempSearchLocation(coordinatesString);
-
-      // Optional: Get human-readable address using reverse geocoding
-      try {
-        const [address] = await Location.reverseGeocodeAsync({
-          latitude,
-          longitude,
-        });
-
-        if (address) {
-          const formattedAddress = [
-            address.street,
-            address.city,
-            address.region,
-            address.postalCode
-          ].filter(Boolean).join(', ');
-
-          if (formattedAddress) {
-            // Show user a choice
-            Alert.alert(
-              'Location Found',
-              `Use coordinates or address?\n\nCoordinates: ${coordinatesString}\n\nAddress: ${formattedAddress}`,
-              [
-                {
-                  text: 'Use Coordinates',
-                  onPress: () => setTempSearchLocation(coordinatesString)
-                },
-                {
-                  text: 'Use Address',
-                  onPress: () => setTempSearchLocation(formattedAddress)
-                }
-              ]
-            );
-          }
-        }
-      } catch (reverseGeocodeError) {
-        console.log('Reverse geocoding failed, using coordinates:', reverseGeocodeError);
-      }
-
-    } catch (error: any) {
-      console.error('Error getting location:', error);
-
-      let errorMessage = 'Failed to get current location. ';
-
-      if (error.code === 'E_LOCATION_SERVICES_DISABLED') {
-        errorMessage += 'Please enable location services.';
-      } else if (error.code === 'E_LOCATION_TIMEOUT') {
-        errorMessage += 'Location request timed out. Please try again.';
-      } else {
-        errorMessage += 'Please check your GPS and try again.';
-      }
-
-      Alert.alert('Location Error', errorMessage);
-    } finally {
-      setIsGettingLocation(false);
-    }
-  };
-
-  const handleLocationButtonPress = () => {
-    if (!isLocationEnabled) {
-      Alert.alert(
-        'Location Services Disabled',
-        'Please enable location services in Settings to use this feature.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Go to Settings',
-            onPress: () => {
-              onClose(); // Close the filter modal
-              router.push('/profile');
-            }
-          }
-        ]
-      );
-      return;
-    }
-
-    getCurrentLocation();
   };
 
   const renderSingleToggleButton = (
@@ -392,6 +467,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
       />
     );
   };
+
+  // Determine if searchLabelWrap should be shown
+  const shouldShowSearchLabel = isLocationFocused || tempSearchLocation.trim().length > 0;
 
   return (
     <>
@@ -453,9 +531,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
           </View>
 
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {/* Search Location */}
+            {/* Keywords Input */}
             <View style={styles.searchSection}>
-              <View style={styles.searchContainer}>
+              <View style={styles.keywordBoxContainer}>
                 <Ionicons
                   name="search"
                   size={14}
@@ -464,73 +542,54 @@ const FilterModal: React.FC<FilterModalProps> = ({
                 />
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="e.g. New York, 10001, 40.7128,-74.0060"
+                  placeholder="e.g. sushi, pizza, tacos"
+                  placeholderTextColor={theme.colors.textLight}
+                  value={tempKeywords}
+                  onChangeText={setTempKeywords}
+                />
+              </View>
+
+              {/* Location Input */}
+              <View style={styles.locationInputContainer}>
+                <Ionicons
+                  name="location"
+                  size={16}
+                  color={theme.colors.textSecondary}
+                  style={styles.locationIcon}
+                />
+                <TextInput
+                  style={styles.locationInput}
+                  placeholder="Enter location"
                   placeholderTextColor={theme.colors.textLight}
                   value={tempSearchLocation}
                   onChangeText={setTempSearchLocation}
+                  onFocus={() => setIsLocationFocused(true)}
+                  onBlur={() => setIsLocationFocused(false)}
                 />
               </View>
 
-              {/* Only show Current Location button if location is enabled */}
-              {isLocationEnabled && (
-                <TouchableOpacity
-                  style={[
-                    styles.locationContainer,
-                    isGettingLocation && styles.locationContainerLoading
-                  ]}
-                  onPress={handleLocationButtonPress}
+              {/* Search Label - only show when location is focused or filled */}
+              {shouldShowSearchLabel && (
+                <TouchableOpacity 
+                  style={styles.searchLabelWrap}
+                  onPress={handleMapNavigation}
                   disabled={isGettingLocation}
                 >
                   {isGettingLocation ? (
-                    <ActivityIndicator
-                      size="small"
-                      color={theme.colors.primary}
-                      style={styles.locationIcon}
-                    />
+                    <ActivityIndicator size="small" color={theme.colors.background} style={styles.labelIcon} />
                   ) : (
                     <Ionicons
-                      name="location"
-                      size={16}
-                      color={theme.colors.textSecondary}
-                      style={styles.locationIcon}
+                      name="navigate"
+                      size={12}
+                      color={theme.colors.background}
+                      style={styles.labelIcon}
                     />
                   )}
-                  <Text style={[
-                    styles.locationText,
-                    isGettingLocation && styles.locationTextLoading
-                  ]}>
-                    {isGettingLocation ? 'Getting location...' : 'Current Location'}
+                  <Text style={styles.labeltext}>
+                    {isGettingLocation ? 'Getting location...' : 'Search by Zipcode or City'}
                   </Text>
                 </TouchableOpacity>
               )}
-
-              {/* Show message if location is disabled */}
-              {!isLocationEnabled && (
-                <TouchableOpacity
-                  style={styles.locationDisabledContainer}
-                  onPress={handleLocationButtonPress}
-                >
-                  <Ionicons
-                    name="location-outline"
-                    size={16}
-                    color={theme.colors.text}
-                    style={styles.locationIcon}
-                  />
-                  <Text style={styles.locationDisabledText}>
-                    Enable location in Settings to use current location
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              <View style={styles.searchLabelWrap}>
-                <Ionicons
-                  name="navigate"
-                  size={12}
-                  color={theme.colors.background}
-                  style={styles.labelIcon}
-                />
-                <Text style={styles.labeltext}>Search by Zipcode or City</Text>
-              </View>
             </View>
 
             {/* Rest of your existing filter sections... */}
@@ -555,11 +614,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
             <View style={styles.sectionContainer}>
               <MaterialCommunityIcons name="cash" size={20} color="white" style={styles.sectionIcon} />
               <View style={styles.sectionWrap}>
-                <View style={styles.sectionHeader}>
+                <TouchableOpacity style={styles.sectionHeader} onPress={() => toggleSection('price')}>
                   <Text style={styles.serviceText}>Price</Text>
                   <TouchableOpacity
                     style={styles.collapseIconButton}
-                    onPress={() => toggleSection('price')}
                   >
                     <FontAwesome
                       name={collapsedSections.price ? "caret-right" : "caret-down"}
@@ -567,7 +625,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                       color="white"
                     />
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
                 {!collapsedSections.price && (
                   <View style={styles.toggleContainer}>
                     {priceRanges.map((price) =>
@@ -582,11 +640,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
             <View style={styles.sectionContainer}>
               <MaterialIcons name="style" size={20} color="white" style={styles.sectionIcon} />
               <View style={styles.sectionWrap}>
-                <View style={styles.sectionHeader}>
+                <TouchableOpacity style={styles.sectionHeader} onPress={() => toggleSection('experience')}>
                   <Text style={styles.serviceText}>Experience</Text>
                   <TouchableOpacity
                     style={styles.collapseIconButton}
-                    onPress={() => toggleSection('experience')}
                   >
                     <FontAwesome
                       name={collapsedSections.experience ? "caret-right" : "caret-down"}
@@ -594,7 +651,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                       color="white"
                     />
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
                 {!collapsedSections.experience && (
                   <View style={styles.toggleContainer}>
                     {experiences.map(experience =>
@@ -609,11 +666,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
             <View style={styles.sectionContainer}>
               <MaterialIcons name="restaurant" size={20} color="white" style={styles.sectionIcon} />
               <View style={styles.sectionWrap}>
-                <View style={styles.sectionHeader}>
+                <TouchableOpacity style={styles.sectionHeader} onPress={() => toggleSection('cuisine')}>
                   <Text style={styles.serviceText}>Cuisine</Text>
                   <TouchableOpacity
                     style={styles.collapseIconButton}
-                    onPress={() => toggleSection('cuisine')}
                   >
                     <FontAwesome
                       name={collapsedSections.cuisine ? "caret-right" : "caret-down"}
@@ -621,7 +677,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                       color="white"
                     />
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
                 {!collapsedSections.cuisine && (
                   <View style={styles.toggleContainer}>
                     {cuisines.map(cuisine =>
@@ -636,11 +692,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
             <View style={styles.sectionContainer}>
               <Ionicons name="pizza" size={20} color="white" style={styles.sectionIcon} />
               <View style={styles.sectionWrap}>
-                <View style={styles.sectionHeader}>
+                <TouchableOpacity style={styles.sectionHeader} onPress={() => toggleSection('taste')}>
                   <Text style={styles.serviceText}>Taste</Text>
                   <TouchableOpacity
                     style={styles.collapseIconButton}
-                    onPress={() => toggleSection('taste')}
                   >
                     <FontAwesome
                       name={collapsedSections.taste ? "caret-right" : "caret-down"}
@@ -648,7 +703,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                       color="white"
                     />
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
                 {!collapsedSections.taste && (
                   <View style={styles.toggleContainer}>
                     {tastes.map(taste =>
@@ -809,12 +864,13 @@ const createStyles = (theme: any) => {
     searchSection: {
       marginBottom: 24,
     },
-    searchContainer: {
+    keywordBoxContainer: {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: theme.colors.background,
       paddingHorizontal: theme.spacing.sm,
       marginBottom: theme.spacing.sm,
+      height: 36,
     },
     searchIcon: {
       marginRight: theme.spacing.xs + 1,
@@ -825,15 +881,29 @@ const createStyles = (theme: any) => {
       fontSize: 12,
       color: theme.colors.text,
     },
+    locationInputContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.background,
+      paddingHorizontal: theme.spacing.sm,
+      marginBottom: theme.spacing.sm,
+      height: 36,
+    },
+    locationIcon: {
+      marginRight: theme.spacing.sm,
+    },
+    locationInput: {
+      flex: 1,
+      fontSize: 12,
+      color: theme.colors.text,
+    },
+
     locationContainer: {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: theme.colors.background,
       paddingHorizontal: theme.spacing.sm,
       marginBottom: theme.spacing.xs,
-    },
-    locationIcon: {
-      marginRight: theme.spacing.sm,
     },
     locationText: {
       fontSize: 12,
@@ -847,21 +917,7 @@ const createStyles = (theme: any) => {
     locationTextLoading: {
       color: theme.colors.textLight,
     },
-    locationDisabledContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.colors.background,
-      paddingHorizontal: theme.spacing.sm,
-      marginBottom: theme.spacing.xs,
-      opacity: 0.6,
-    },
-    locationDisabledText: {
-      fontSize: 12,
-      fontWeight: '400',
-      lineHeight: 36,
-      color: theme.colors.text,
-      flex: 1,
-    },
+
     searchLabelWrap: {
       flexDirection: 'row',
       alignItems: 'center',

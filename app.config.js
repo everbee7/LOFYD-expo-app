@@ -2,7 +2,7 @@ import 'dotenv/config';
 
 export default {
   expo: {
-    name: "lofyd",
+    name: "LOFYD",
     slug: "lofyd",
     version: "1.0.0",
     orientation: "portrait",
@@ -19,7 +19,8 @@ export default {
           NSAllowsArbitraryLoads: true
         },
         "UIBackgroundModes": ["fetch", "remote-notification"],
-        "NSFaceIDUsageDescription": "This app uses Face ID for secure authentication."
+        "NSFaceIDUsageDescription": "This app uses Face ID for secure authentication.",
+        "NSLocationWhenInUseUsageDescription": "This app needs access to your location to provide location-based features."
       }
     },
     android: {

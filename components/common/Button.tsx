@@ -182,7 +182,7 @@ const createStyles = (theme: any) => StyleSheet.create({
 		borderColor: theme.colors.primary,
 	},
 	buttonGhost: {
-		backgroundColor: '#EDE8FF',
+		backgroundColor: '#e3e7e2ff',
 	},
 	buttonDisabled: {
 		backgroundColor: theme.colors.primary,

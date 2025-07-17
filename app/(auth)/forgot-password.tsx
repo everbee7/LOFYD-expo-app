@@ -158,13 +158,13 @@ const createStyles = (theme: any) => StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.xxxl,
     paddingBottom: theme.spacing.xxl * 2,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.xl,
+    marginLeft: theme.spacing.xl,
     alignSelf: 'flex-start',
   },
   backText: {
