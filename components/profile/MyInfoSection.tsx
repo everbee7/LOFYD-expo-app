@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Modal, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -112,25 +112,30 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
     }
   };
 
-  const handleDateChange = (event: any, date?: Date) => {
+  const handleDateChange = useCallback((event: any, date?: Date) => {
     if (Platform.OS === 'android') {
       setShowDatePicker(false);
+      if (date) {
+        setSelectedDate(date);
+        const formattedDate = date.toLocaleDateString('en-US');
+        setFormData({ ...formData, birthDate: formattedDate });
+      }
+    } else {
+      // iOS: Only update the selected date, don't close modal
+      if (date) {
+        setSelectedDate(date);
+      }
     }
-    
-    if (date) {
-      setSelectedDate(date);
-      const formattedDate = date.toLocaleDateString('en-US');
-      setFormData({ ...formData, birthDate: formattedDate });
-    }
-  };
+  }, [formData]);
 
-  const handleDatePickerConfirm = () => {
-    if (Platform.OS === 'ios') {
-      setShowDatePicker(false);
-    }
-  };
+  const handleDatePickerConfirm = useCallback(() => {
+    // iOS: Apply the selected date and close modal
+    const formattedDate = selectedDate.toLocaleDateString('en-US');
+    setFormData({ ...formData, birthDate: formattedDate });
+    setShowDatePicker(false);
+  }, [selectedDate, formData]);
 
-  const handleDatePickerCancel = () => {
+  const handleDatePickerCancel = useCallback(() => {
     setShowDatePicker(false);
     // Reset to original date
     try {
@@ -140,14 +145,14 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
       console.error('Date reset error:', error);
       setSelectedDate(new Date(1990, 0, 1));
     }
-  };
+  }, [userInfo.birthDate]);
 
   const getFrequencyLabel = (value: string) => {
     const option = FREQUENCY_OPTIONS.find(opt => opt.value === value);
     return option ? option.label : value;
   };
 
-  const BirthdayDatePicker = () => {
+  const BirthdayDatePicker = useMemo(() => {
     try {
       return (
         <View style={styles.datePickerContainer}>
@@ -172,57 +177,6 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
               color={isEditing ? theme.colors.primary : theme.colors.textSecondary} 
             />
           </TouchableOpacity>
-          
-          {/* @react-native-community/datetimepicker */}
-          {showDatePicker && (
-            <>
-              {Platform.OS === 'ios' ? (
-                <Modal
-                  transparent={true}
-                  animationType="slide"
-                  visible={showDatePicker}
-                  onRequestClose={handleDatePickerCancel}
-                >
-                  <View style={styles.datePickerModalOverlay}>
-                    <TouchableOpacity 
-                      style={styles.datePickerModalBackdrop}
-                      activeOpacity={1}
-                      onPress={handleDatePickerCancel}
-                    />
-                    <View style={styles.datePickerModal}>
-                      <View style={styles.datePickerModalHeader}>
-                        <TouchableOpacity onPress={handleDatePickerCancel}>
-                          <Text style={styles.datePickerModalButton}>Cancel</Text>
-                        </TouchableOpacity>
-                        <Text style={styles.datePickerModalTitle}>Select Birthday</Text>
-                        <TouchableOpacity onPress={handleDatePickerConfirm}>
-                          <Text style={[styles.datePickerModalButton, styles.datePickerModalConfirm]}>Done</Text>
-                        </TouchableOpacity>
-                      </View>
-                      <DateTimePicker
-                        value={selectedDate}
-                        mode="date"
-                        display="spinner"
-                        onChange={handleDateChange}
-                        maximumDate={new Date()}
-                        minimumDate={new Date(1900, 0, 1)}
-                        style={styles.datePickerIOS}
-                      />
-                    </View>
-                  </View>
-                </Modal>
-              ) : (
-                <DateTimePicker
-                  value={selectedDate}
-                  mode="date"
-                  display="default"
-                  onChange={handleDateChange}
-                  maximumDate={new Date()}
-                  minimumDate={new Date(1900, 0, 1)}
-                />
-              )}
-            </>
-          )}
         </View>
       );
     } catch (error) {
@@ -244,7 +198,61 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
         </View>
       );
     }
-  };
+  }, [formData.birthDate, isEditing, theme.colors.primary, theme.colors.textSecondary, styles.datePickerContainer, styles.datePickerLabel, styles.datePickerButton, styles.datePickerButtonDisabled, styles.datePickerButtonText, styles.datePickerPlaceholder]);
+
+  const DatePickerModal = useMemo(() => {
+    if (!showDatePicker) return null;
+
+    return (
+      <>
+        {Platform.OS === 'ios' ? (
+          <Modal
+            transparent={true}
+            animationType="slide"
+            visible={showDatePicker}
+            onRequestClose={handleDatePickerCancel}
+          >
+            <View style={styles.datePickerModalOverlay}>
+              <TouchableOpacity 
+                style={styles.datePickerModalBackdrop}
+                activeOpacity={1}
+                onPress={handleDatePickerCancel}
+              />
+              <View style={styles.datePickerModal}>
+                <View style={styles.datePickerModalHeader}>
+                  <TouchableOpacity onPress={handleDatePickerCancel}>
+                    <Text style={styles.datePickerModalButton}>Cancel</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.datePickerModalTitle}>Select Birthday</Text>
+                  <TouchableOpacity onPress={handleDatePickerConfirm}>
+                    <Text style={[styles.datePickerModalButton, styles.datePickerModalConfirm]}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleDateChange}
+                  maximumDate={new Date()}
+                  minimumDate={new Date(1900, 0, 1)}
+                  style={styles.datePickerIOS}
+                />
+              </View>
+            </View>
+          </Modal>
+        ) : (
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+            maximumDate={new Date()}
+            minimumDate={new Date(1900, 0, 1)}
+          />
+        )}
+      </>
+    );
+  }, [showDatePicker, selectedDate, handleDateChange, handleDatePickerCancel, handleDatePickerConfirm, styles.datePickerModalOverlay, styles.datePickerModalBackdrop, styles.datePickerModal, styles.datePickerModalHeader, styles.datePickerModalButton, styles.datePickerModalTitle, styles.datePickerModalConfirm, styles.datePickerIOS]);
 
   const FrequencyDropdown = () => (
     <View style={styles.dropdownContainer}>
@@ -371,7 +379,10 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
         />
 
         {/* Birthday DatePicker */}
-        <BirthdayDatePicker />
+        {BirthdayDatePicker}
+
+        {/* Date Picker Modal */}
+        {DatePickerModal}
 
         {/* Home Zipcode Input */}
         <Input
@@ -523,8 +534,10 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderTopLeftRadius: theme.borderRadius.xl || 20,
     borderTopRightRadius: theme.borderRadius.xl || 20,
     paddingBottom: 34, // Safe area bottom padding
+    alignItems: 'center',
   },
   datePickerModalHeader: {
+    width: '100%',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
