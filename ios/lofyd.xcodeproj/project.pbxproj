@@ -8,28 +8,28 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		2C2D9384F9DACDA3209435B2 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65386F401B99F995B068B869 /* ExpoModulesProvider.swift */; };
+		15083F5242A2D522E98FABE1 /* libPods-lofyd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B6B5E860E5CA09FAE53961C1 /* libPods-lofyd.a */; };
+		1650474C0639E321F179B78D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1CEEC22B0F5B5823790CC98F /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		9626FCD1942CB1C66C5044E8 /* libPods-LOFYD.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B14CF5ECD4ECA0F865DBA266 /* libPods-LOFYD.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		E93AE5852C7E510D555C413D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 5672A679D7812189B9A06DB7 /* PrivacyInfo.xcprivacy */; };
+		E23EC6DF6837F2B635A37F2D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2070FC7B42930165C817A63 /* ExpoModulesProvider.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		076CA9F455808809E50EDA74 /* Pods-LOFYD.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LOFYD.debug.xcconfig"; path = "Target Support Files/Pods-LOFYD/Pods-LOFYD.debug.xcconfig"; sourceTree = "<group>"; };
-		13B07F961A680F5B00A75B9A /* LOFYD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LOFYD.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = LOFYD/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = LOFYD/Info.plist; sourceTree = "<group>"; };
-		28BCD28BC66362A36347E29C /* Pods-LOFYD.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LOFYD.release.xcconfig"; path = "Target Support Files/Pods-LOFYD/Pods-LOFYD.release.xcconfig"; sourceTree = "<group>"; };
-		5672A679D7812189B9A06DB7 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = LOFYD/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		65386F401B99F995B068B869 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-LOFYD/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = LOFYD/SplashScreen.storyboard; sourceTree = "<group>"; };
-		B14CF5ECD4ECA0F865DBA266 /* libPods-LOFYD.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-LOFYD.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07F961A680F5B00A75B9A /* lofyd.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = lofyd.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = lofyd/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = lofyd/Info.plist; sourceTree = "<group>"; };
+		1CEEC22B0F5B5823790CC98F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = lofyd/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		51214965C76548151FDAC9A9 /* Pods-lofyd.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-lofyd.debug.xcconfig"; path = "Target Support Files/Pods-lofyd/Pods-lofyd.debug.xcconfig"; sourceTree = "<group>"; };
+		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = lofyd/SplashScreen.storyboard; sourceTree = "<group>"; };
+		B6B5E860E5CA09FAE53961C1 /* libPods-lofyd.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-lofyd.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		DE07F630856C7BF2AB71B9EF /* Pods-lofyd.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-lofyd.release.xcconfig"; path = "Target Support Files/Pods-lofyd/Pods-lofyd.release.xcconfig"; sourceTree = "<group>"; };
+		E2070FC7B42930165C817A63 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-lofyd/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = LOFYD/AppDelegate.swift; sourceTree = "<group>"; };
-		F11748442D0722820044C1D9 /* LOFYD-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "LOFYD-Bridging-Header.h"; path = "LOFYD/LOFYD-Bridging-Header.h"; sourceTree = "<group>"; };
+		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = lofyd/AppDelegate.swift; sourceTree = "<group>"; };
+		F11748442D0722820044C1D9 /* lofyd-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "lofyd-Bridging-Header.h"; path = "lofyd/lofyd-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,42 +37,42 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9626FCD1942CB1C66C5044E8 /* libPods-LOFYD.a in Frameworks */,
+				15083F5242A2D522E98FABE1 /* libPods-lofyd.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		13B07FAE1A68108700A75B9A /* LOFYD */ = {
+		13B07FAE1A68108700A75B9A /* lofyd */ = {
 			isa = PBXGroup;
 			children = (
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
-				F11748442D0722820044C1D9 /* LOFYD-Bridging-Header.h */,
+				F11748442D0722820044C1D9 /* lofyd-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				5672A679D7812189B9A06DB7 /* PrivacyInfo.xcprivacy */,
+				1CEEC22B0F5B5823790CC98F /* PrivacyInfo.xcprivacy */,
 			);
-			name = LOFYD;
+			name = lofyd;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				B14CF5ECD4ECA0F865DBA266 /* libPods-LOFYD.a */,
+				B6B5E860E5CA09FAE53961C1 /* libPods-lofyd.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		482C007C3FD9DD9F71A4263B /* LOFYD */ = {
+		62B5CE8CDD92BDC7BDE08DE6 /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				65386F401B99F995B068B869 /* ExpoModulesProvider.swift */,
+				FC4CCBD78D7506169E285C9D /* lofyd */,
 			);
-			name = LOFYD;
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -85,12 +85,12 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* LOFYD */,
+				13B07FAE1A68108700A75B9A /* lofyd */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				FD3B64CFA762261E77E3E726 /* Pods */,
-				C9D3A7C4EB575CA35B9E66B2 /* ExpoModulesProviders */,
+				A9A73C3D1A30824910DCBD07 /* Pods */,
+				62B5CE8CDD92BDC7BDE08DE6 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -100,9 +100,18 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* LOFYD.app */,
+				13B07F961A680F5B00A75B9A /* lofyd.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A9A73C3D1A30824910DCBD07 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				51214965C76548151FDAC9A9 /* Pods-lofyd.debug.xcconfig */,
+				DE07F630856C7BF2AB71B9EF /* Pods-lofyd.release.xcconfig */,
+			);
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -111,50 +120,40 @@
 				BB2F792C24A3F905000567C9 /* Expo.plist */,
 			);
 			name = Supporting;
-			path = LOFYD/Supporting;
+			path = lofyd/Supporting;
 			sourceTree = "<group>";
 		};
-		C9D3A7C4EB575CA35B9E66B2 /* ExpoModulesProviders */ = {
+		FC4CCBD78D7506169E285C9D /* lofyd */ = {
 			isa = PBXGroup;
 			children = (
-				482C007C3FD9DD9F71A4263B /* LOFYD */,
+				E2070FC7B42930165C817A63 /* ExpoModulesProvider.swift */,
 			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
-		FD3B64CFA762261E77E3E726 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				076CA9F455808809E50EDA74 /* Pods-LOFYD.debug.xcconfig */,
-				28BCD28BC66362A36347E29C /* Pods-LOFYD.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
+			name = lofyd;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13B07F861A680F5B00A75B9A /* LOFYD */ = {
+		13B07F861A680F5B00A75B9A /* lofyd */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "LOFYD" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "lofyd" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				591CCF55BF9E4E8792343CA0 /* [Expo] Configure project */,
+				B63CB9DC4579CF3D317B88E2 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				17042C3C271DDCA41F8A0A37 /* [CP] Embed Pods Frameworks */,
+				9BFF6EF4CDF3984E07BF2D56 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = LOFYD;
-			productName = LOFYD;
-			productReference = 13B07F961A680F5B00A75B9A /* LOFYD.app */;
+			name = lofyd;
+			productName = lofyd;
+			productReference = 13B07F961A680F5B00A75B9A /* lofyd.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -170,7 +169,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "LOFYD" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "lofyd" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -183,7 +182,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* LOFYD */,
+				13B07F861A680F5B00A75B9A /* lofyd */,
 			);
 		};
 /* End PBXProject section */
@@ -196,7 +195,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				E93AE5852C7E510D555C413D /* PrivacyInfo.xcprivacy in Resources */,
+				1650474C0639E321F179B78D /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -233,49 +232,12 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-LOFYD-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-lofyd-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
-		};
-		17042C3C271DDCA41F8A0A37 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-LOFYD/Pods-LOFYD-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-LOFYD/Pods-LOFYD-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		591CCF55BF9E4E8792343CA0 /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-LOFYD/expo-configure-project.sh\"\n";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -283,7 +245,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-LOFYD/Pods-LOFYD-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-lofyd/Pods-lofyd-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
@@ -332,8 +294,45 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-LOFYD/Pods-LOFYD-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-lofyd/Pods-lofyd-resources.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		9BFF6EF4CDF3984E07BF2D56 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-lofyd/Pods-lofyd-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-lofyd/Pods-lofyd-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		B63CB9DC4579CF3D317B88E2 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-lofyd/expo-configure-project.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -343,7 +342,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				2C2D9384F9DACDA3209435B2 /* ExpoModulesProvider.swift in Sources */,
+				E23EC6DF6837F2B635A37F2D /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -352,19 +351,19 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 076CA9F455808809E50EDA74 /* Pods-LOFYD.debug.xcconfig */;
+			baseConfigurationReference = 51214965C76548151FDAC9A9 /* Pods-lofyd.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = LOFYD/LOFYD.entitlements;
+				CODE_SIGN_ENTITLEMENTS = lofyd/lofyd.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"FB_SONARKIT_ENABLED=1",
 				);
-				INFOPLIST_FILE = LOFYD/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				INFOPLIST_FILE = lofyd/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -377,8 +376,8 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.lofyd.app;
-				PRODUCT_NAME = LOFYD;
-				SWIFT_OBJC_BRIDGING_HEADER = "LOFYD/LOFYD-Bridging-Header.h";
+				PRODUCT_NAME = lofyd;
+				SWIFT_OBJC_BRIDGING_HEADER = "lofyd/lofyd-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -388,14 +387,14 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 28BCD28BC66362A36347E29C /* Pods-LOFYD.release.xcconfig */;
+			baseConfigurationReference = DE07F630856C7BF2AB71B9EF /* Pods-lofyd.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = LOFYD/LOFYD.entitlements;
+				CODE_SIGN_ENTITLEMENTS = lofyd/lofyd.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
-				INFOPLIST_FILE = LOFYD/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
+				INFOPLIST_FILE = lofyd/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -408,8 +407,8 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.lofyd.app;
-				PRODUCT_NAME = LOFYD;
-				SWIFT_OBJC_BRIDGING_HEADER = "LOFYD/LOFYD-Bridging-Header.h";
+				PRODUCT_NAME = lofyd;
+				SWIFT_OBJC_BRIDGING_HEADER = "lofyd/lofyd-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
@@ -543,7 +542,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "LOFYD" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "lofyd" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -552,7 +551,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "LOFYD" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "lofyd" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
