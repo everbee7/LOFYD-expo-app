@@ -71,7 +71,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isLocationEnabled, setIsLocationEnabled] = useState(false);
   const [isLocationFocused, setIsLocationFocused] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<{latitude: number, longitude: number} | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{ latitude: number, longitude: number } | null>(null);
 
   // Collapse states for each section
   const [collapsedSections, setCollapsedSections] = useState({
@@ -86,10 +86,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
     const checkLocationPermission = async () => {
       try {
         const storedPermissionStatus = await AsyncStorage.getItem(LOCATION_PERMISSION_KEY);
-        
+
         // Determine if location is truly enabled
         let isEnabled = storedPermissionStatus === 'granted';
-        
+
         setIsLocationEnabled(isEnabled);
       } catch (error) {
         console.error('Error checking location permission:', error);
@@ -147,7 +147,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
   // Function to handle map navigation
   const handleMapNavigation = async () => {
     let locationToUse = '';
-    
+
     // Use filled location if available, otherwise use current location
     if (tempSearchLocation.trim()) {
       locationToUse = tempSearchLocation.trim();
@@ -176,10 +176,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
     // Encode the location for URL
     const encodedLocation = encodeURIComponent(locationToUse);
-    
+
     try {
       let mapUrl = '';
-      
+
       if (Platform.OS === 'ios') {
         // Apple Maps for iOS
         mapUrl = `http://maps.apple.com/?q=${encodedLocation}`;
@@ -187,10 +187,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
         // Google Maps for Android
         mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
       }
-      
+
       // Check if the URL can be opened
       const supported = await Linking.canOpenURL(mapUrl);
-      
+
       if (supported) {
         await Linking.openURL(mapUrl);
       } else {
@@ -292,7 +292,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
         });
 
         const { latitude, longitude } = location.coords;
-        
+
         // Try to get human-readable address using reverse geocoding
         try {
           const [address] = await Location.reverseGeocodeAsync({
@@ -568,28 +568,25 @@ const FilterModal: React.FC<FilterModalProps> = ({
                 />
               </View>
 
-              {/* Search Label - only show when location is focused or filled */}
-              {shouldShowSearchLabel && (
-                <TouchableOpacity 
-                  style={styles.searchLabelWrap}
-                  onPress={handleMapNavigation}
-                  disabled={isGettingLocation}
-                >
-                  {isGettingLocation ? (
-                    <ActivityIndicator size="small" color={theme.colors.background} style={styles.labelIcon} />
-                  ) : (
-                    <Ionicons
-                      name="navigate"
-                      size={12}
-                      color={theme.colors.background}
-                      style={styles.labelIcon}
-                    />
-                  )}
-                  <Text style={styles.labeltext}>
-                    {isGettingLocation ? 'Getting location...' : 'Search by Zipcode or City'}
-                  </Text>
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity
+                style={styles.searchLabelWrap}
+                onPress={handleMapNavigation}
+                disabled={isGettingLocation}
+              >
+                {isGettingLocation ? (
+                  <ActivityIndicator size="small" color={theme.colors.background} style={styles.labelIcon} />
+                ) : (
+                  <Ionicons
+                    name="navigate"
+                    size={12}
+                    color={theme.colors.background}
+                    style={styles.labelIcon}
+                  />
+                )}
+                <Text style={styles.labeltext}>
+                  {isGettingLocation ? 'Getting location...' : 'Search by Zipcode or City'}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Rest of your existing filter sections... */}
@@ -862,7 +859,7 @@ const createStyles = (theme: any) => {
       paddingHorizontal: 16,
     },
     searchSection: {
-      marginBottom: 24,
+      marginBottom: theme.spacing.lg,
     },
     keywordBoxContainer: {
       flexDirection: 'row',
