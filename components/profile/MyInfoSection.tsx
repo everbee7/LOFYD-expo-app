@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Modal, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import DatePicker from 'react-native-date-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../contexts/ThemeContext';
 
 // Import your custom components
@@ -112,15 +112,34 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
     }
   };
 
-  const handleDateConfirm = (date: Date) => {
-    setShowDatePicker(false);
-    setSelectedDate(date);
-    const formattedDate = date.toLocaleDateString('en-US');
-    setFormData({ ...formData, birthDate: formattedDate });
+  const handleDateChange = (event: any, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    
+    if (date) {
+      setSelectedDate(date);
+      const formattedDate = date.toLocaleDateString('en-US');
+      setFormData({ ...formData, birthDate: formattedDate });
+    }
   };
 
-  const handleDateCancel = () => {
+  const handleDatePickerConfirm = () => {
+    if (Platform.OS === 'ios') {
+      setShowDatePicker(false);
+    }
+  };
+
+  const handleDatePickerCancel = () => {
     setShowDatePicker(false);
+    // Reset to original date
+    try {
+      const safeDate = createSafeDate(userInfo.birthDate);
+      setSelectedDate(safeDate);
+    } catch (error) {
+      console.error('Date reset error:', error);
+      setSelectedDate(new Date(1990, 0, 1));
+    }
   };
 
   const getFrequencyLabel = (value: string) => {
@@ -154,21 +173,56 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
             />
           </TouchableOpacity>
           
-          {/* react-native-date-picker */}
-          <DatePicker
-            modal
-            open={showDatePicker}
-            date={selectedDate}
-            mode="date"
-            maximumDate={new Date()}
-            minimumDate={new Date(1900, 0, 1)}
-            onConfirm={handleDateConfirm}
-            onCancel={handleDateCancel}
-            title="Select Birthday"
-            confirmText="Done"
-            cancelText="Cancel"
-            theme={'light'}
-          />
+          {/* @react-native-community/datetimepicker */}
+          {showDatePicker && (
+            <>
+              {Platform.OS === 'ios' ? (
+                <Modal
+                  transparent={true}
+                  animationType="slide"
+                  visible={showDatePicker}
+                  onRequestClose={handleDatePickerCancel}
+                >
+                  <View style={styles.datePickerModalOverlay}>
+                    <TouchableOpacity 
+                      style={styles.datePickerModalBackdrop}
+                      activeOpacity={1}
+                      onPress={handleDatePickerCancel}
+                    />
+                    <View style={styles.datePickerModal}>
+                      <View style={styles.datePickerModalHeader}>
+                        <TouchableOpacity onPress={handleDatePickerCancel}>
+                          <Text style={styles.datePickerModalButton}>Cancel</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.datePickerModalTitle}>Select Birthday</Text>
+                        <TouchableOpacity onPress={handleDatePickerConfirm}>
+                          <Text style={[styles.datePickerModalButton, styles.datePickerModalConfirm]}>Done</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <DateTimePicker
+                        value={selectedDate}
+                        mode="date"
+                        display="spinner"
+                        onChange={handleDateChange}
+                        maximumDate={new Date()}
+                        minimumDate={new Date(1900, 0, 1)}
+                        style={styles.datePickerIOS}
+                      />
+                    </View>
+                  </View>
+                </Modal>
+              ) : (
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display="default"
+                  onChange={handleDateChange}
+                  maximumDate={new Date()}
+                  minimumDate={new Date(1900, 0, 1)}
+                />
+              )}
+            </>
+          )}
         </View>
       );
     } catch (error) {
@@ -453,6 +507,46 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   datePickerPlaceholder: {
     color: theme.colors.textSecondary,
+  },
+  
+  // iOS DatePicker Modal styles
+  datePickerModalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  datePickerModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  datePickerModal: {
+    backgroundColor: theme.colors.background,
+    borderTopLeftRadius: theme.borderRadius.xl || 20,
+    borderTopRightRadius: theme.borderRadius.xl || 20,
+    paddingBottom: 34, // Safe area bottom padding
+  },
+  datePickerModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  datePickerModalTitle: {
+    ...theme.typography.h3,
+    color: theme.colors.text,
+  },
+  datePickerModalButton: {
+    ...theme.typography.body,
+    color: theme.colors.primary,
+    fontSize: 16,
+  },
+  datePickerModalConfirm: {
+    fontWeight: '600',
+  },
+  datePickerIOS: {
+    height: 200,
   },
   
   // Dropdown styles
