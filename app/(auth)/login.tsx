@@ -140,11 +140,10 @@ const createStyles = (theme: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    paddingTop: theme.spacing.xxl,
-    paddingBottom: theme.spacing.xl,
-    paddingHorizontal: theme.spacing.xl,
   },
   keyboardAvoidingView: {
+    paddingTop: theme.spacing.xxl,
+    paddingBottom: theme.spacing.xl,
     flex: 1,
     justifyContent: 'center',
   },
@@ -165,5 +164,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   footerText: {
     fontSize: 12,
     textAlign: 'center',
+    marginTop: theme.spacing.xl,
   }
 });

@@ -165,7 +165,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     backgroundColor: theme.colors.background,
     paddingTop: theme.spacing.xxl,
     paddingBottom: theme.spacing.xl,
-    paddingHorizontal: theme.spacing.xl,
   },
   keyboardAvoidingView: {
     flex: 1,

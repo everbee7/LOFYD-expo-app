@@ -470,7 +470,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     opacity: 0.8,
   },
   actionSection: {
-    marginTop: theme.spacing.lg,
   },
   editButton: {
     marginBottom: theme.spacing.md,
@@ -564,7 +563,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   
   // Dropdown styles
   dropdownContainer: {
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.xl,
   },
   dropdownLabel: {
     ...theme.typography.label,

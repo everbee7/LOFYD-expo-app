@@ -873,7 +873,7 @@ const createStyles = (theme: any) => {
       height: 36,
     },
     searchIcon: {
-      marginRight: theme.spacing.xs + 1,
+      marginRight: theme.spacing.xs,
       marginLeft: 1,
     },
     searchInput: {
@@ -890,7 +890,7 @@ const createStyles = (theme: any) => {
       height: 36,
     },
     locationIcon: {
-      marginRight: theme.spacing.sm,
+      marginRight: theme.spacing.xs,
     },
     locationInput: {
       flex: 1,

@@ -126,8 +126,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   settingsCard: {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    ...theme.shadows.sm,
   },
   settingItem: {
     flexDirection: 'row',
@@ -170,7 +168,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: theme.colors.border,
-    marginLeft: theme.spacing.lg + 32 + theme.spacing.md, // Align with text
+    marginLeft: 32 + theme.spacing.md, // Align with text
   },
 });
 
