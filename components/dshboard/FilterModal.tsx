@@ -16,15 +16,16 @@ import {
   Linking
 } from 'react-native';
 import { FontAwesome, Ionicons, MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { ServiceType } from '@/types/location';
 import ToggleButton from '@/components/common/ToggleButton';
+import ConfirmationPopup from '@/components/common/ConfirmationPopup';
 import useLocationStore from '@/store/locationStore';
 import { locationService } from '@/services/location';
 import SaveFilterModal from './SaveFilterModal';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
 
 // Use the same key as AuthStore and ProfileScreen
 const LOCATION_PERMISSION_KEY = 'userLocationPermissionStatus';
@@ -46,14 +47,14 @@ const FilterModal: React.FC<FilterModalProps> = ({
     searchLocation,
     radiusInMiles,
     sortBy,
+    isCurrentLocation,
     setActiveTab,
     setLocation,
+    setIsCurrentLocation,
     setDeviceLocation,
     setRadius,
     setSortBy,
-    clearFilters,
-    addFilter,
-    removeFilter,
+    setFilters,
     searchWithCurrentParams
   } = useLocationStore();
 
@@ -67,10 +68,11 @@ const FilterModal: React.FC<FilterModalProps> = ({
   const [selectedDistance, setSelectedDistance] = useState<number>(0.5);
   const [selectedSortBy, setSelectedSortBy] = useState<string>('relevance');
   const [showSaveModal, setShowSaveModal] = useState(false);
+  const [isCurrentLocationSwitch, setIsCurrentLocationSwitch] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
 
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isLocationEnabled, setIsLocationEnabled] = useState(false);
-  const [isLocationFocused, setIsLocationFocused] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ latitude: number, longitude: number } | null>(null);
 
   // Collapse states for each section
@@ -82,21 +84,23 @@ const FilterModal: React.FC<FilterModalProps> = ({
   });
 
   // Check location permission status when modal opens
+  const checkLocationPermission = async () => {
+    try {
+      const storedPermissionStatus = await AsyncStorage.getItem(LOCATION_PERMISSION_KEY);
+
+      // Determine if location is truly enabled
+      let isEnabled = storedPermissionStatus === 'granted';
+
+      setIsLocationEnabled(isEnabled);
+      return isEnabled;
+    } catch (error) {
+      console.error('Error checking location permission:', error);
+      setIsLocationEnabled(false);
+      return false;
+    }
+  };
+
   useEffect(() => {
-    const checkLocationPermission = async () => {
-      try {
-        const storedPermissionStatus = await AsyncStorage.getItem(LOCATION_PERMISSION_KEY);
-
-        // Determine if location is truly enabled
-        let isEnabled = storedPermissionStatus === 'granted';
-
-        setIsLocationEnabled(isEnabled);
-      } catch (error) {
-        console.error('Error checking location permission:', error);
-        setIsLocationEnabled(false);
-      }
-    };
-
     if (visible) {
       checkLocationPermission();
     }
@@ -142,64 +146,54 @@ const FilterModal: React.FC<FilterModalProps> = ({
         setSelectedSortBy(sortBy);
       }
     }, [visible, activeFilters, searchLocation, radiusInMiles, sortBy])
-  )
+  );
 
-  // Function to handle map navigation
-  const handleMapNavigation = async () => {
-    let locationToUse = '';
-
-    // Use filled location if available, otherwise use current location
-    if (tempSearchLocation.trim()) {
-      locationToUse = tempSearchLocation.trim();
-    } else if (currentLocation) {
-      locationToUse = `${currentLocation.latitude},${currentLocation.longitude}`;
-    } else if (isLocationEnabled) {
-      // Try to get current location if not already available
-      try {
-        setIsGettingLocation(true);
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-          timeInterval: 10000,
-          distanceInterval: 100,
-        });
-        locationToUse = `${location.coords.latitude},${location.coords.longitude}`;
-      } catch (error) {
-        Alert.alert('Error', 'Could not get your current location. Please enter a location manually or enable location services in your device settings.');
-        return;
-      } finally {
-        setIsGettingLocation(false);
+  useEffect(() => {
+    if (visible) {
+      if (isLocationEnabled) {
+        setIsCurrentLocationSwitch(!!isCurrentLocation);
+      } else {
+        setIsCurrentLocationSwitch(false);
       }
+    }
+  }, [visible, isCurrentLocation, isLocationEnabled])
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = () => {
+    // Convert keywords array to comma-separated string for comparison
+    const currentKeywords = activeFilters.keywords.join(', ');
+
+    return (
+      tempSearchLocation !== searchLocation ||
+      tempKeywords !== currentKeywords ||
+      JSON.stringify(selectedServiceTypes.sort()) !== JSON.stringify([...activeFilters.serviceType].sort()) ||
+      JSON.stringify(selectedPriceRanges.sort()) !== JSON.stringify([...activeFilters.priceRange].sort()) ||
+      JSON.stringify(selectedExperiences.sort()) !== JSON.stringify([...activeFilters.experience].sort()) ||
+      JSON.stringify(selectedCuisines.sort()) !== JSON.stringify([...activeFilters.cuisine].sort()) ||
+      JSON.stringify(selectedTastes.sort()) !== JSON.stringify([...activeFilters.taste].sort()) ||
+      selectedDistance !== radiusInMiles ||
+      selectedSortBy !== sortBy
+    );
+  };
+
+  // Handle back button press
+  const handleBackPress = () => {
+    if (hasUnsavedChanges()) {
+      setShowConfirmationModal(true);
     } else {
-      Alert.alert('Location Required', 'Please enter a location or enable location services in your device settings to use this feature.');
-      return;
+      onClose();
     }
+  };
 
-    // Encode the location for URL
-    const encodedLocation = encodeURIComponent(locationToUse);
+  // Handle confirmation modal responses
+  const handleApplyAndClose = async () => {
+    setShowConfirmationModal(false);
+    await handleApplyFilters();
+  };
 
-    try {
-      let mapUrl = '';
-
-      if (Platform.OS === 'ios') {
-        // Apple Maps for iOS
-        mapUrl = `http://maps.apple.com/?q=${encodedLocation}`;
-      } else {
-        // Google Maps for Android
-        mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
-      }
-
-      // Check if the URL can be opened
-      const supported = await Linking.canOpenURL(mapUrl);
-
-      if (supported) {
-        await Linking.openURL(mapUrl);
-      } else {
-        Alert.alert('Error', 'Could not open maps application.');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Could not open maps application.');
-      console.error('Map navigation error:', error);
-    }
+  const handleContinueWithoutApplying = () => {
+    setShowConfirmationModal(false);
+    onClose();
   };
 
   const serviceTypes = [{
@@ -271,6 +265,28 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setActiveTab(tab);
   };
 
+  const handleSwitchIsCurrentLocation = async () => {
+    const isEnabled = await checkLocationPermission();
+    if (isEnabled) {
+      setIsCurrentLocationSwitch(true);
+    } else {
+      Alert.alert(
+        'Location Services',
+        'To find services near you, we need access to your location. Would you like to enable location services in settings?',
+        [
+          {
+            text: 'Enable Location',
+            onPress: () => router.push('/profile?activeTab=settings')
+          },
+          {
+            text: 'Not Now',
+            style: 'cancel'
+          }
+        ]
+      );
+    }
+  };
+
   // Parse keywords from comma-separated string
   const parseKeywords = (keywordString: string): string[] => {
     if (!keywordString.trim()) return [];
@@ -282,7 +298,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
   const handleApplyFilters = async () => {
     // Get device location when applying filters
-    if (isLocationEnabled) {
+    if (isCurrentLocationSwitch && isLocationEnabled) {
       try {
         setIsGettingLocation(true);
         const location = await Location.getCurrentPositionAsync({
@@ -338,39 +354,16 @@ const FilterModal: React.FC<FilterModalProps> = ({
       setDeviceLocation('', 'locale');
     }
 
-    // Clear all filters first
-    clearFilters();
-
-    console.log('selectedServiceTypes', selectedServiceTypes);
-    // Apply service type filters
-    selectedServiceTypes.forEach(type => {
-      addFilter('serviceType', type as ServiceType);
-    });
-
-    // Apply keyword filters
+    // Apply all filters in one operation
     const keywordArray = parseKeywords(tempKeywords);
-    keywordArray.forEach(keyword => {
-      addFilter('keywords', keyword);
-    });
 
-    // Apply price range filters
-    selectedPriceRanges.forEach(price => {
-      addFilter('priceRange', price);
-    });
-
-    // Apply experience filters
-    selectedExperiences.forEach(exp => {
-      addFilter('experience', exp);
-    });
-
-    // Apply cuisine filters
-    selectedCuisines.forEach(cuisine => {
-      addFilter('cuisine', cuisine);
-    });
-
-    // Apply taste filters
-    selectedTastes.forEach(taste => {
-      addFilter('taste', taste);
+    setFilters({
+      serviceType: selectedServiceTypes as ServiceType[],
+      keywords: keywordArray,
+      priceRange: selectedPriceRanges,
+      experience: selectedExperiences,
+      cuisine: selectedCuisines,
+      taste: selectedTastes,
     });
 
     // Update location if changed
@@ -382,6 +375,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
         setLocation('', 'locale');
       }
     }
+
+    // Update isCurrentLocation
+    setIsCurrentLocation(isCurrentLocationSwitch);
 
     // Update radius if changed
     if (selectedDistance !== radiusInMiles) {
@@ -411,7 +407,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setSelectedExperiences([]);
     setSelectedCuisines([]);
     setSelectedTastes([]);
-    setSelectedDistance(10);
+    setSelectedDistance(2);
     setSelectedSortBy('relevance');
     setTempSearchLocation('');
     setTempKeywords('');
@@ -468,20 +464,17 @@ const FilterModal: React.FC<FilterModalProps> = ({
     );
   };
 
-  // Determine if searchLabelWrap should be shown
-  const shouldShowSearchLabel = isLocationFocused || tempSearchLocation.trim().length > 0;
-
   return (
     <>
       <Modal
         visible={visible}
         transparent={false}
         animationType="slide"
-        onRequestClose={onClose}
+        onRequestClose={handleBackPress}
       >
         <SafeAreaView style={styles.container}>
           {/* Header */}
-          <TouchableOpacity onPress={onClose} style={styles.backButton}>
+          <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
             <Ionicons name="chevron-back" size={20} color={theme.colors.background} />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
@@ -537,7 +530,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                 <Ionicons
                   name="search"
                   size={14}
-                  color={theme.colors.textSecondary}
+                  color={theme.colors.textLight}
                   style={styles.searchIcon}
                 />
                 <TextInput
@@ -550,46 +543,51 @@ const FilterModal: React.FC<FilterModalProps> = ({
               </View>
 
               {/* Location Input */}
-              <View style={styles.locationInputContainer}>
-                <Ionicons
-                  name="location"
-                  size={16}
-                  color={theme.colors.textSecondary}
-                  style={styles.locationIcon}
-                />
-                <TextInput
-                  style={styles.locationInput}
-                  placeholder="Enter location"
-                  placeholderTextColor={theme.colors.textLight}
-                  value={tempSearchLocation}
-                  onChangeText={setTempSearchLocation}
-                  onFocus={() => setIsLocationFocused(true)}
-                  onBlur={() => setIsLocationFocused(false)}
-                />
-              </View>
+              {
+                isCurrentLocationSwitch ?
+                  <TouchableOpacity style={styles.currentLocationSwitchButton} onPress={() => setIsCurrentLocationSwitch(false)}>
+                    <Ionicons
+                      name="location"
+                      size={16}
+                      color={theme.colors.primary}
+                      style={styles.locationIcon}
+                    />
+                    <Text style={styles.locationButtonLabel}>Current Location</Text>
+                  </TouchableOpacity>
+                  : <View style={{ flexDirection: 'column' }}>
+                    <View style={styles.locationInputContainer}>
+                      <Ionicons
+                        name="location"
+                        size={16}
+                        color={theme.colors.textLight}
+                        style={styles.locationIcon}
+                      />
+                      <TextInput
+                        style={styles.locationInput}
+                        placeholder={"Location"}
+                        placeholderTextColor={theme.colors.textLight}
+                        value={tempSearchLocation}
+                        onChangeText={setTempSearchLocation}
+                      />
+                    </View>
 
-              <TouchableOpacity
-                style={styles.searchLabelWrap}
-                onPress={handleMapNavigation}
-                disabled={isGettingLocation}
-              >
-                {isGettingLocation ? (
-                  <ActivityIndicator size="small" color={theme.colors.background} style={styles.labelIcon} />
-                ) : (
-                  <Ionicons
-                    name="navigate"
-                    size={12}
-                    color={theme.colors.background}
-                    style={styles.labelIcon}
-                  />
-                )}
-                <Text style={styles.labeltext}>
-                  {isGettingLocation ? 'Getting location...' : 'Search by Zipcode or City'}
-                </Text>
-              </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.searchLabelWrap}
+                      onPress={handleSwitchIsCurrentLocation}
+                      disabled={isGettingLocation}
+                    >
+                      <Ionicons
+                        name="navigate"
+                        size={12}
+                        color={theme.colors.background}
+                        style={styles.labelIcon}
+                      />
+                      <Text style={styles.labeltext}>Current Location</Text>
+                    </TouchableOpacity>
+                  </View>
+              }
             </View>
 
-            {/* Rest of your existing filter sections... */}
             {/* Refine with filters */}
             <Text style={styles.refineTitle}>Refine with filters</Text>
 
@@ -613,7 +611,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
               <View style={styles.sectionWrap}>
                 <TouchableOpacity style={styles.sectionHeader} onPress={() => toggleSection('price')}>
                   <Text style={styles.serviceText}>Price</Text>
-                  <TouchableOpacity
+                  <View
                     style={styles.collapseIconButton}
                   >
                     <FontAwesome
@@ -621,7 +619,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                       size={16}
                       color="white"
                     />
-                  </TouchableOpacity>
+                  </View>
                 </TouchableOpacity>
                 {!collapsedSections.price && (
                   <View style={styles.toggleContainer}>
@@ -639,7 +637,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
               <View style={styles.sectionWrap}>
                 <TouchableOpacity style={styles.sectionHeader} onPress={() => toggleSection('experience')}>
                   <Text style={styles.serviceText}>Experience</Text>
-                  <TouchableOpacity
+                  <View
                     style={styles.collapseIconButton}
                   >
                     <FontAwesome
@@ -647,7 +645,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                       size={16}
                       color="white"
                     />
-                  </TouchableOpacity>
+                  </View>
                 </TouchableOpacity>
                 {!collapsedSections.experience && (
                   <View style={styles.toggleContainer}>
@@ -665,7 +663,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
               <View style={styles.sectionWrap}>
                 <TouchableOpacity style={styles.sectionHeader} onPress={() => toggleSection('cuisine')}>
                   <Text style={styles.serviceText}>Cuisine</Text>
-                  <TouchableOpacity
+                  <View
                     style={styles.collapseIconButton}
                   >
                     <FontAwesome
@@ -673,7 +671,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                       size={16}
                       color="white"
                     />
-                  </TouchableOpacity>
+                  </View>
                 </TouchableOpacity>
                 {!collapsedSections.cuisine && (
                   <View style={styles.toggleContainer}>
@@ -691,7 +689,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
               <View style={styles.sectionWrap}>
                 <TouchableOpacity style={styles.sectionHeader} onPress={() => toggleSection('taste')}>
                   <Text style={styles.serviceText}>Taste</Text>
-                  <TouchableOpacity
+                  <View
                     style={styles.collapseIconButton}
                   >
                     <FontAwesome
@@ -699,7 +697,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                       size={16}
                       color="white"
                     />
-                  </TouchableOpacity>
+                  </View>
                 </TouchableOpacity>
                 {!collapsedSections.taste && (
                   <View style={styles.toggleContainer}>
@@ -761,6 +759,19 @@ const FilterModal: React.FC<FilterModalProps> = ({
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      {/* Confirmation Popup */}
+      <ConfirmationPopup
+        visible={showConfirmationModal}
+        title="Apply Changes?"
+        message="You have unsaved filter changes. Would you like to apply them before closing?"
+        confirmButtonText="Apply Changes"
+        cancelButtonText="Continue Without Applying"
+        onConfirm={handleApplyAndClose}
+        onCancel={handleContinueWithoutApplying}
+        theme={theme}
+        confirmButtonColor="primary"
+      />
 
       {/* Save Filter Modal */}
       <SaveFilterModal
@@ -878,6 +889,20 @@ const createStyles = (theme: any) => {
       fontSize: 12,
       color: theme.colors.text,
     },
+    currentLocationSwitchButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.background,
+      paddingHorizontal: theme.spacing.sm,
+      marginBottom: theme.spacing.sm,
+      height: 36,
+    },
+    locationButtonLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: theme.colors.primary,
+      marginLeft: theme.spacing.xs,
+    },
     locationInputContainer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -894,27 +919,6 @@ const createStyles = (theme: any) => {
       fontSize: 12,
       color: theme.colors.text,
     },
-
-    locationContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.colors.background,
-      paddingHorizontal: theme.spacing.sm,
-      marginBottom: theme.spacing.xs,
-    },
-    locationText: {
-      fontSize: 12,
-      fontWeight: '600',
-      lineHeight: 36,
-      color: theme.colors.primary,
-    },
-    locationContainerLoading: {
-      opacity: 0.7,
-    },
-    locationTextLoading: {
-      color: theme.colors.textLight,
-    },
-
     searchLabelWrap: {
       flexDirection: 'row',
       alignItems: 'center',

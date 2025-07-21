@@ -103,6 +103,7 @@ export interface FilterSetting {
   searchLocation: string;
   radiusInMiles: number;
   sortBy: SortType;
+  isCurrentLocation: boolean | null;
   activeFilters: {
     serviceType: ServiceType[];
     keywords: string[];
@@ -124,6 +125,7 @@ export interface LocationState {
 
   // Search parameters
   searchLocation: string;
+  isCurrentLocation: boolean | null;
   locationType: LocationType;
   radiusInMiles: number;
   sortBy: SortType;
@@ -168,6 +170,7 @@ export interface LocationState {
 
   // Filter methods
   setLocation: (location: string, locationType: LocationType) => void;
+  setIsCurrentLocation: (isTrue: boolean) => void;
   setDeviceLocation: (location: string, locationType: LocationType) => void;
   setRadius: (radius: number) => void;
   setSortBy: (sortBy: SortType) => void;

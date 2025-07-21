@@ -27,6 +27,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
 
   // Search parameters
   searchLocation: DEFAULT_LOCATION,
+  isCurrentLocation: null,
   locationType: 'locale',
   radiusInMiles: DEFAULT_RADIUS,
   sortBy: 'relevance',
@@ -65,6 +66,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
 
       // Load saved preferences from AsyncStorage
       const savedLocation = await AsyncStorage.getItem('userLocation');
+      const savedIsCurrentLocation = await AsyncStorage.getItem('userIsCurrentLocation');
       const savedRadius = await AsyncStorage.getItem('searchRadius');
       const savedSortBy = await AsyncStorage.getItem('sortPreference');
       const savedTab = await AsyncStorage.getItem('activeTab');
@@ -75,6 +77,12 @@ const useLocationStore = create<LocationState>((set, get) => ({
         set({
           searchLocation: savedLocation,
           locationType
+        });
+      }
+
+      if (savedIsCurrentLocation) {
+        set({
+          isCurrentLocation: savedIsCurrentLocation === 'true'
         });
       }
 
@@ -137,8 +145,30 @@ const useLocationStore = create<LocationState>((set, get) => ({
 
   // Helper function to determine which location to use
   getEffectiveLocation: () => {
-    const { searchLocation, deviceLocation } = get();
-    
+    const { searchLocation, deviceLocation, isCurrentLocation } = get();
+
+    // Current location
+    if (isCurrentLocation) {
+      // Otherwise, use device location if available
+      if (deviceLocation && deviceLocation.trim()) {
+        return {
+          location: deviceLocation,
+          locationType: get().deviceLocationType
+        };
+      }
+
+      // Fallback to user's postal code from auth store
+      if (authStore) {
+        const authState = authStore.getState();
+        if (authState.user?.postalCode) {
+          return {
+            location: authState.user.postalCode,
+            locationType: 'postal' as const
+          };
+        }
+      }
+    }
+
     // If user has entered a location, use it
     if (searchLocation && searchLocation.trim()) {
       return {
@@ -146,15 +176,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
         locationType: get().locationType
       };
     }
-    
-    // Otherwise, use device location if available
-    if (deviceLocation && deviceLocation.trim()) {
-      return {
-        location: deviceLocation,
-        locationType: get().deviceLocationType
-      };
-    }
-    
+
     // Fallback to user's postal code from auth store
     if (authStore) {
       const authState = authStore.getState();
@@ -165,7 +187,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
         };
       }
     }
-    
+
     // Final fallback to default
     return {
       location: 'New York, NY',
@@ -335,6 +357,15 @@ const useLocationStore = create<LocationState>((set, get) => ({
     AsyncStorage.setItem('userLocation', location);
   },
 
+  // Set location switch
+  setIsCurrentLocation: (isTrue: boolean) => {
+    set({
+      isCurrentLocation: isTrue,
+      pagination: { ...get().pagination, offset: 0 } // Reset pagination
+    });
+    AsyncStorage.setItem('userIsCurrentLocation', isTrue ? "true" : "false");
+  },
+
   // Set search radius
   setRadius: (radius: number) => {
     set({
@@ -435,7 +466,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
   // Search with current parameters
   searchWithCurrentParams: async () => {
     const { radiusInMiles, sortBy, activeFilters, pagination, activeTab } = get();
-    
+
     // Use effective location (user location or device location)
     const { location, locationType } = get().getEffectiveLocation();
 
@@ -473,7 +504,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
 
   // Save current filter setting
   saveCurrentFilterSetting: (name: string) => {
-    const { activeTab, radiusInMiles, sortBy, activeFilters, filterSettingLog } = get();
+    const { activeTab, radiusInMiles, isCurrentLocation, sortBy, activeFilters, filterSettingLog } = get();
     const { location } = get().getEffectiveLocation();
 
     const newSetting: FilterSetting = {
@@ -481,6 +512,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
       name: name.trim(),
       timestamp: Date.now(),
       activeTab,
+      isCurrentLocation,
       searchLocation: location,
       radiusInMiles,
       sortBy,

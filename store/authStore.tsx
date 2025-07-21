@@ -1,11 +1,14 @@
+import { Alert } from 'react-native';
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
+import { router } from 'expo-router';
 import { authService } from '../services/auth';
 import { BIOMETRIC_USER_ID, BIOMETRIC_USER_REFRESH_TOKEN_KEY, BIOMETRIC_USER_TOKEN_KEY, biometricService } from '../services/biometric';
 import { AuthState, User, SignUpRequest, UserProfileRequest } from '../types/auth';
 
 const LOCATION_PERMISSION_KEY = 'userLocationPermissionStatus';
+const BIOMETRIC_ALARM_AT_FIRST_KEY = 'BIOMETRIC_ALARM_AT_FIRST_KEY';
 
 const useAuthStore = create<AuthState>((set, get) => ({
 	user: null,
@@ -45,27 +48,27 @@ const useAuthStore = create<AuthState>((set, get) => ({
 		try {
 			// Check current permission status from device
 			const { status: currentStatus } = await Location.getForegroundPermissionsAsync();
-			
+
 			// Get stored permission preference
 			const storedPermissionStatus = await AsyncStorage.getItem(LOCATION_PERMISSION_KEY);
-			
+
 			// If permission is already granted, update storage and return true
 			if (currentStatus === 'granted') {
 				await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'granted');
 				return true;
 			}
-			
+
 			// If we haven't asked before or user previously wanted location services
 			if (storedPermissionStatus === null || storedPermissionStatus === 'granted') {
 				// Request permission
 				const { status: requestStatus } = await Location.requestForegroundPermissionsAsync();
-				
+
 				// Store the result
 				await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, requestStatus);
-				
+
 				return requestStatus === 'granted';
 			}
-			
+
 			// Permission was previously denied
 			return false;
 		} catch (error) {
@@ -113,12 +116,11 @@ const useAuthStore = create<AuthState>((set, get) => ({
 			// Handle location permission on first login
 			const storedPermissionStatus = await AsyncStorage.getItem(LOCATION_PERMISSION_KEY);
 			console.log("storedPermissionStatus", storedPermissionStatus);
-			
 			// Check if this is first time or if user previously allowed location
 			if (storedPermissionStatus === null || storedPermissionStatus === 'granted') {
 				// Check current device permission status
 				const { status: currentStatus } = await Location.getForegroundPermissionsAsync();
-				
+
 				// If permission not granted yet, request it
 				if (currentStatus !== 'granted') {
 					try {
@@ -131,6 +133,20 @@ const useAuthStore = create<AuthState>((set, get) => ({
 					// Permission already granted, just update storage
 					await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'granted');
 				}
+			}
+
+			// Handle Biometic Alarm
+			const biometricAlarmStatus = await AsyncStorage.getItem(BIOMETRIC_ALARM_AT_FIRST_KEY);
+			if (biometricAlarmStatus === null) {
+				await AsyncStorage.setItem(BIOMETRIC_ALARM_AT_FIRST_KEY, 'confirm');
+				Alert.alert(
+					'Biometric Setup',
+					'Would you like to enable Biometric?',
+					[
+						{ text: 'Yes', onPress: () => router.push('/profile?activeTab=settings'), },
+						{ text: 'No, thanks' }
+					]
+				);
 			}
 
 			set({ user: user, error: null });

@@ -1,32 +1,30 @@
-import { Stack, router } from 'expo-router';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+// location/_layout.tsx
+import { Stack } from 'expo-router';
+import { View, StyleSheet } from 'react-native';
+import CustomTabBar from '@/components/CustomTabBar';
 
 export default function WorksiteLayout() {
 	return (
-		<Stack
-			screenOptions={{
-				headerShown: false,
-			}}
-		>
-			<Stack.Screen
-				name="[id]"
-				options={{
-					title: "Location Detail",
+		<View style={styles.container}>
+			<Stack
+				screenOptions={{
+					headerShown: false,
 				}}
-			/>
-		</Stack>
+			>
+				<Stack.Screen
+					name="[id]"
+					options={{
+						title: "Location Detail",
+					}}
+				/>
+			</Stack>
+			<CustomTabBar />
+		</View>
 	);
 }
 
-
 const styles = StyleSheet.create({
-	backButton: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
-		justifyContent: 'center',
-		alignItems: 'center',
-		marginLeft: 2,
-		marginRight: 16,
+	container: {
+		flex: 1,
 	},
 });

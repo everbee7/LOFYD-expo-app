@@ -38,8 +38,9 @@ export default function DashboardScreen() {
     initialize,
     searchWithCurrentParams,
     loadMore,
-    setLocation,
     setActiveTab,
+    setFilters,
+    addFilter,
     removeFilter: removeStoreFilter,
     clearError,
     refreshData
@@ -57,40 +58,47 @@ export default function DashboardScreen() {
     }, [initialize])
   );
 
-  // Initialize search text with current location and watch for changes
+  // Initialize search text with current keywords and watch for changes
   useEffect(() => {
-    setSearchText(searchLocation);
-  }, [searchLocation]);
+    // Convert keywords array to comma-separated string for display
+    const keywordsString = activeFilters.keywords.join(', ');
+    setSearchText(keywordsString);
+  }, [activeFilters.keywords]);
 
   // Watch for filter changes and trigger search
   useEffect(() => {
     if (activeFilters) {
-      // Only search if we're not in the initial loading state
-      if (searchLocation && searchLocation !== 'New York, NY') {
-        searchWithCurrentParams();
-      }
+      searchWithCurrentParams();
       console.log('activeFilters', activeFilters);
     }
   }, [activeFilters, activeTab]);
 
-  // Debounced search function
-  const debouncedSearch = useDebounce((text: string) => {
-    if (text.trim()) {
-      const locationType = locationService.determineLocationType(text.trim());
-      setLocation(text.trim(), locationType);
-      searchWithCurrentParams();
-    }
-  }, 500);
-
-  // Handle search text changes with debounce
-  const handleSearchTextChange = (text: string) => {
-    setSearchText(text);
-    if (text.trim() !== searchLocation) {
-      debouncedSearch(text);
-    }
+  // Parse keywords from comma-separated string
+  const parseKeywords = (keywordString: string): string[] => {
+    if (!keywordString.trim()) return [];
+    return keywordString
+      .split(',')
+      .map(keyword => keyword.trim())
+      .filter(keyword => keyword.length > 0);
   };
 
-  // Convert active filters from the store to display format with types
+  // Debounced search function for keywords
+  const debouncedKeywordSearch = useDebounce((text: string) => {
+    const keywords = parseKeywords(text);
+
+    // Update filters with new keywords in one operation
+    setFilters({
+      keywords: keywords
+    });
+  }, 500);
+
+  // Handle search text changes with debounce for keywords
+  const handleSearchTextChange = (text: string) => {
+    setSearchText(text);
+    debouncedKeywordSearch(text);
+  };
+
+  // Convert active filters from the store to display format with types (excluding keywords since they're in search input)
   useEffect(() => {
     const filterItems: FilterItem[] = [];
     let index = 0;
@@ -105,15 +113,7 @@ export default function DashboardScreen() {
       });
     });
 
-    // Add keyword filters
-    activeFilters.keywords.forEach((keyword) => {
-      filterItems.push({
-        type: 'keywords',
-        value: keyword,
-        displayText: `Keyword: ${keyword}`,
-        originalIndex: index++
-      });
-    });
+    // Skip keywords since they're shown in the search input
 
     // Add cuisine filters
     activeFilters.cuisine.forEach((cuisine) => {
@@ -189,11 +189,13 @@ export default function DashboardScreen() {
   };
 
   const handleSearchSubmit = () => {
-    if (searchText.trim()) {
-      const locationType = locationService.determineLocationType(searchText.trim());
-      setLocation(searchText.trim(), locationType);
-      searchWithCurrentParams();
-    }
+    // Apply keywords when user presses enter/search
+    const keywords = parseKeywords(searchText);
+
+    // Update filters with new keywords in one operation
+    setFilters({
+      keywords: keywords
+    });
   };
 
   const handleLoadMore = () => {
@@ -324,7 +326,7 @@ export default function DashboardScreen() {
             />
             <TextInput
               style={styles.searchInput}
-              placeholder="Enter location (city, postal code, coordinates)"
+              placeholder="Enter keywords (e.g. sushi, pizza, tacos)"
               placeholderTextColor={theme.colors.textLight}
               value={searchText}
               onChangeText={handleSearchTextChange}
@@ -333,7 +335,13 @@ export default function DashboardScreen() {
             />
             {searchText.length > 0 && (
               <TouchableOpacity
-                onPress={() => setSearchText('')}
+                onPress={() => {
+                  setSearchText('');
+                  // Clear all keyword filters in one operation
+                  setFilters({
+                    keywords: []
+                  });
+                }}
                 style={styles.clearButton}
               >
                 <Ionicons
@@ -363,7 +371,7 @@ export default function DashboardScreen() {
               style={styles.locationIcon}
             />
             <Text style={styles.locationText}>
-              {searchLocation} • {radiusInMiles} miles • Sort: {sortBy}
+              {searchLocation || 'Set location in filters'} • {radiusInMiles} miles • Sort: {sortBy}
             </Text>
           </View>
           <Text style={styles.resultsText}>

@@ -323,7 +323,7 @@ export default function LocationDetail() {
       }
 
       const phoneNumber = location.phone.replace(/\D/g, ''); // Remove all non-digit characters
-      const phoneUrl = `tel:${phoneNumber}`;
+      const phoneUrl = `tel:1${phoneNumber}`;
 
       // Check if device can make phone calls
       const canCall = await Linking.canOpenURL(phoneUrl);
@@ -761,13 +761,13 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
   },
   locationName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '500',
     color: theme.colors.text,
     marginBottom: theme.spacing.xs / 2,
   },
   address: {
-    fontSize: 12,
+    fontSize: 14,
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
   },
@@ -957,14 +957,14 @@ const createStyles = (theme: any) => StyleSheet.create({
     fontWeight: '400',
   },
   restaurentName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '500',
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
   },
   restaurentDescription: {
     color: theme.colors.text,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '400',
     lineHeight: 14,
     marginBottom: theme.spacing.md,
@@ -975,7 +975,7 @@ const createStyles = (theme: any) => StyleSheet.create({
     padding: theme.spacing.lg,
   },
   termsText: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.textSecondary,
     fontWeight: '400',
   }

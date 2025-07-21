@@ -47,7 +47,7 @@ export default function LocationItem({ location, onPress, isSpecial = false}: Lo
           <Text style={styles.locationName} numberOfLines={1} ellipsizeMode="tail">
             {location.name}
           </Text>
-          <Text style={styles.locationDescription} numberOfLines={1} ellipsizeMode="tail">
+          <Text style={styles.locationDescription} numberOfLines={2} ellipsizeMode="tail">
             {location.description}
           </Text>
           <Text style={styles.locationDistance}>{location.distance}</Text>
@@ -95,7 +95,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   locationImage: {
     width: 96,
-    height: 66,
+    height: 84,
     backgroundColor: theme.colors.inputBackground,
   },
 });

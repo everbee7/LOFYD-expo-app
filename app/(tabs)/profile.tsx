@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
 import * as Location from 'expo-location';
 
@@ -50,7 +50,8 @@ interface SettingsItem {
 export default function ProfileScreen() {
   const router = useRouter();
   const { theme } = useTheme();
-  const [activeTab, setActiveTab] = useState('myInfo');
+  const params = useLocalSearchParams();
+  const [activeTab, setActiveTab] = useState(params.activeTab ?? 'myInfo');
   const [loading, setLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("");
   const { logout, user, updateUserData } = useAuthStore();
@@ -410,7 +411,7 @@ export default function ProfileScreen() {
       <View style={styles.tabsContainer}>
         <Tabs
           tabs={tabs}
-          activeTab={activeTab}
+          activeTab={activeTab as string}
           onTabPress={setActiveTab}
         />
       </View>
