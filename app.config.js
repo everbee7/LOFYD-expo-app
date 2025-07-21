@@ -5,6 +5,7 @@ export default {
     name: "LOFYD",
     slug: "lofyd",
     version: "1.0.0",
+    runtimeVersion: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "lofyd",
@@ -92,9 +93,6 @@ export default {
     owner: "cgastin",
     updates: {
       url: "https://u.expo.dev/4378c182-70a8-4632-9c8e-b74c02172842"
-    },
-    runtimeVersion: {
-      policy: "appVersion"
     }
   }
 };
