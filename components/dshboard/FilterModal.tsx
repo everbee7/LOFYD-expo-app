@@ -178,10 +178,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
   // Handle back button press
   const handleBackPress = () => {
+    onClose();
     if (hasUnsavedChanges()) {
       setShowConfirmationModal(true);
-    } else {
-      onClose();
     }
   };
 
@@ -552,7 +551,16 @@ const FilterModal: React.FC<FilterModalProps> = ({
                       color={theme.colors.primary}
                       style={styles.locationIcon}
                     />
-                    <Text style={styles.locationButtonLabel}>Current Location</Text>
+                    <Text style={styles.locationButtonLabel}>
+                      {isGettingLocation ? 'Getting Location...' : 'Current Location'}
+                    </Text>
+                    {isGettingLocation && (
+                      <ActivityIndicator
+                        size="small"
+                        color={theme.colors.primary}
+                        style={{ marginLeft: theme.spacing.xs }}
+                      />
+                    )}
                   </TouchableOpacity>
                   : <View style={{ flexDirection: 'column' }}>
                     <View style={styles.locationInputContainer}>
