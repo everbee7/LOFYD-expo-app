@@ -235,6 +235,7 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
                   onChange={handleDateChange}
                   maximumDate={new Date()}
                   minimumDate={new Date(1900, 0, 1)}
+                  themeVariant="light"
                   style={styles.datePickerIOS}
                 />
               </View>
@@ -248,6 +249,7 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
             onChange={handleDateChange}
             maximumDate={new Date()}
             minimumDate={new Date(1900, 0, 1)}
+            themeVariant="light"
           />
         )}
       </>
