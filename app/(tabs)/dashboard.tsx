@@ -29,6 +29,7 @@ export default function DashboardScreen() {
     isLoading,
     error,
     searchLocation,
+    searchedLocation,
     radiusInMiles,
     sortBy,
     activeFilters,
@@ -371,7 +372,7 @@ export default function DashboardScreen() {
               style={styles.locationIcon}
             />
             <Text style={styles.locationText}>
-              {searchLocation || 'Set location in filters'} • {radiusInMiles} miles • Sort: {sortBy}
+              {searchedLocation || 'Set location in filters'} • {radiusInMiles} miles • Sort: {sortBy}
             </Text>
           </View>
           <Text style={styles.resultsText}>
@@ -381,14 +382,14 @@ export default function DashboardScreen() {
       </View>
 
       {/* Error Display */}
-      {error && (
+      {/* {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity onPress={clearError} style={styles.errorDismiss}>
             <Text style={styles.errorDismissText}>Dismiss</Text>
           </TouchableOpacity>
         </View>
-      )}
+      )} */}
 
       {/* Data List */}
       <FlatList

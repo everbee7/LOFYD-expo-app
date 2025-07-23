@@ -307,50 +307,20 @@ const FilterModal: React.FC<FilterModalProps> = ({
         });
 
         const { latitude, longitude } = location.coords;
+        const coordinatesString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
 
-        // Try to get human-readable address using reverse geocoding
-        try {
-          const [address] = await Location.reverseGeocodeAsync({
-            latitude,
-            longitude,
-          });
-
-          if (address) {
-            const formattedAddress = [
-              address.city,
-              address.region,
-              address.postalCode
-            ].filter(Boolean).join(', ');
-
-            if (formattedAddress) {
-              // Save device location as locale (human-readable address)
-              setDeviceLocation(formattedAddress, 'locale');
-            } else {
-              // Fallback to coordinates if no readable address
-              const coordinatesString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
-              setDeviceLocation(coordinatesString, 'coords');
-            }
-          } else {
-            // Fallback to coordinates if no address found
-            const coordinatesString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
-            setDeviceLocation(coordinatesString, 'coords');
-          }
-        } catch (reverseGeocodeError) {
-          console.log('Reverse geocoding failed, using coordinates:', reverseGeocodeError);
-          // Fallback to coordinates
-          const coordinatesString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
-          setDeviceLocation(coordinatesString, 'coords');
-        }
+        // Save device location as coordinates
+        setDeviceLocation(coordinatesString, 'coords');
       } catch (error) {
         console.log('Could not get device location:', error);
         // Clear device location if failed
-        setDeviceLocation('', 'locale');
+        setDeviceLocation('', 'coords');
       } finally {
         setIsGettingLocation(false);
       }
     } else {
       // Clear device location if location services disabled
-      setDeviceLocation('', 'locale');
+      setDeviceLocation('', 'coords');
     }
 
     // Apply all filters in one operation

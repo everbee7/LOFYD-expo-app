@@ -27,6 +27,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
 
   // Search parameters
   searchLocation: DEFAULT_LOCATION,
+  searchedLocation: "",
   isCurrentLocation: null,
   locationType: 'locale',
   radiusInMiles: DEFAULT_RADIUS,
@@ -200,6 +201,9 @@ const useLocationStore = create<LocationState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
+      // Save the location text that's actually being used for search
+      set({ searchedLocation: params.location });
+
       const response = await specialService.getSpecials(params);
 
       set({
@@ -224,6 +228,9 @@ const useLocationStore = create<LocationState>((set, get) => ({
   getLocations: async (params: GetLocationsRequest) => {
     try {
       set({ isLoading: true, error: null });
+
+      // Save the location text that's actually being used for search
+      set({ searchedLocation: params.location });
 
       const response = await locationService.getLocations(params);
 

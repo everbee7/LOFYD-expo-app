@@ -125,6 +125,7 @@ export interface LocationState {
 
   // Search parameters
   searchLocation: string;
+  searchedLocation: string;
   isCurrentLocation: boolean | null;
   locationType: LocationType;
   radiusInMiles: number;
