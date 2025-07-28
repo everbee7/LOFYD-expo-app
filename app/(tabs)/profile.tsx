@@ -87,8 +87,8 @@ export default function ProfileScreen() {
   ]);
 
   useEffect(() => {
-    try {
-      const initUserInfo = async () => {
+    const initUserInfo = async () => {
+      try {
         setLoading(true);
         setLoadingText("Getting the info...");
         const data = await authService.getUserData();
@@ -96,18 +96,16 @@ export default function ProfileScreen() {
           ...userInfo,
           ...data
         };
-        console.log('data', data, updatedUserInfo);
         setUserInfo({
           ...updatedUserInfo
         });
-      };
-
-      initUserInfo();
-    } catch (error) {
-
-    } finally {
-      setLoading(false);
-    }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    initUserInfo();
   }, []);
 
   // Check biometric status when component loads

@@ -508,10 +508,10 @@ const createStyles = (theme: any) => StyleSheet.create({
   savedFilterBadge: {
     fontSize: 10,
     lineHeight: 10,
+    paddingVertical: 3,
     color: theme.colors.background,
     borderRadius: 12,
     textAlign: 'center',
-    verticalAlign: 'middle',
     fontWeight: '600',
     position: 'absolute',
     right: -8,

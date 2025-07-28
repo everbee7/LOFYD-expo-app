@@ -127,7 +127,8 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    height: 80 + (Platform.OS === 'ios' ? 10 : 0),
+    height: 80,
+    paddingBottom: Platform.OS === 'ios' ? 10 : 0,
     alignItems: 'center',
     justifyContent: 'space-around',
   },
