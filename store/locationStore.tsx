@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as DeviceLocation from 'expo-location';
 import { locationService } from '../services/location';
 import { specialService } from '../services/special';
 import { LocationState, Special, Location, GetSpecialsRequest, GetLocationsRequest, FilterSetting } from '../types/location';
@@ -145,27 +146,73 @@ const useLocationStore = create<LocationState>((set, get) => ({
   },
 
   // Helper function to determine which location to use
-  getEffectiveLocation: () => {
+  getEffectiveLocation: async () => {
     const { searchLocation, deviceLocation, isCurrentLocation } = get();
 
     // Current location
     if (isCurrentLocation) {
-      // Otherwise, use device location if available
-      if (deviceLocation && deviceLocation.trim()) {
-        return {
-          location: deviceLocation,
-          locationType: get().deviceLocationType
-        };
-      }
+      try {
+        // Get current position
+        const location = await DeviceLocation.getCurrentPositionAsync({
+          accuracy: DeviceLocation.Accuracy.Balanced,
+          timeInterval: 10000,
+          distanceInterval: 100,
+        });
 
-      // Fallback to user's postal code from auth store
-      if (authStore) {
-        const authState = authStore.getState();
-        if (authState.user?.postalCode) {
+        const { latitude, longitude } = location.coords;
+        const coordinatesString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+
+        // Reverse geocode to get locale format
+        try {
+          const geocodedLocation = await DeviceLocation.reverseGeocodeAsync({
+            latitude,
+            longitude,
+          });
+
+          if (geocodedLocation && geocodedLocation.length > 0) {
+            const address = geocodedLocation[0];
+            // Format as "City, State" or similar locale format
+            const localeString = `${address.city || address.subregion || ''}, ${address.region || address.country || ''}`.replace(/^,\s*|,\s*$/g, '');
+
+            // Save device location as locale
+            get().setDeviceLocation(localeString, 'locale');
+
+            return {
+              location: localeString,
+              locationType: 'locale' as const
+            };
+          }
+        } catch (geocodeError) {
+          console.warn('Failed to reverse geocode location:', geocodeError);
+        }
+
+        // Fallback to coordinates if reverse geocoding fails
+        get().setDeviceLocation(coordinatesString, 'coords');
+        return {
+          location: coordinatesString,
+          locationType: 'coords' as const
+        };
+
+      } catch (locationError) {
+        console.warn('Failed to get current location:', locationError);
+
+        // Fallback to previously saved device location if available
+        if (deviceLocation && deviceLocation.trim()) {
           return {
-            location: authState.user.postalCode,
-            locationType: 'postal' as const
+            location: deviceLocation,
+            locationType: get().deviceLocationType
           };
+        }
+
+        // Fallback to user's postal code from auth store
+        if (authStore) {
+          const authState = authStore.getState();
+          if (authState.user?.postalCode) {
+            return {
+              location: authState.user.postalCode,
+              locationType: 'postal' as const
+            };
+          }
         }
       }
     }
@@ -295,7 +342,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
     }
 
     // Use effective location (user location or device location)
-    const { location, locationType } = get().getEffectiveLocation();
+    const { location, locationType } = await get().getEffectiveLocation();
 
     try {
       set({ isLoading: true });
@@ -475,7 +522,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
     const { radiusInMiles, sortBy, activeFilters, pagination, activeTab } = get();
 
     // Use effective location (user location or device location)
-    const { location, locationType } = get().getEffectiveLocation();
+    const { location, locationType } = await get().getEffectiveLocation();
 
     if (activeTab === 'Specials') {
       const params: GetSpecialsRequest = {
@@ -510,9 +557,9 @@ const useLocationStore = create<LocationState>((set, get) => ({
   },
 
   // Save current filter setting
-  saveCurrentFilterSetting: (name: string) => {
+  saveCurrentFilterSetting: async (name: string) => {
     const { activeTab, radiusInMiles, isCurrentLocation, sortBy, activeFilters, filterSettingLog } = get();
-    const { location } = get().getEffectiveLocation();
+    const { location } = await get().getEffectiveLocation();
 
     const newSetting: FilterSetting = {
       id: Date.now().toString(),
@@ -542,6 +589,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
       // Apply all settings from the saved filter
       set({
         activeTab: setting.activeTab,
+        isCurrentLocation: setting.isCurrentLocation,
         searchLocation: setting.searchLocation,
         radiusInMiles: setting.radiusInMiles,
         sortBy: setting.sortBy,

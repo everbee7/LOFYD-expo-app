@@ -185,7 +185,7 @@ export interface LocationState {
   refreshData: () => Promise<void>;
 
   // Helper method to get effective location
-  getEffectiveLocation: () => { location: string; locationType: LocationType };
+  getEffectiveLocation: () => Promise<{ location: string; locationType: LocationType }>;
 
   // New methods for filter settings
   saveCurrentFilterSetting: (name: string) => void;

@@ -116,7 +116,6 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderWidth: 1,
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,
-    maxWidth: 150, // Increased width to accommodate "Type: Value" format
   },
   filterTagText: {
     ...theme.typography.filterText,

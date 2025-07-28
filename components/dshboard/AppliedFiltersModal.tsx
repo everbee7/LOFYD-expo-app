@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import useLocationStore from '@/store/locationStore';
 import { FilterSetting } from '@/types/location';
+import { sortByLabels } from '@/app/(tabs)/dashboard';
 
 interface AppliedFiltersModalProps {
   visible: boolean;
@@ -60,6 +61,20 @@ const AppliedFiltersModal: React.FC<AppliedFiltersModalProps> = ({
     return parts.length > 0 ? parts.join(', ') : 'No specific filters';
   };
 
+  const getLocationDisplay = (setting: FilterSetting) => {
+    if (setting.isCurrentLocation) {
+      return {
+        icon: '📍',
+        text: 'Current Location',
+      };
+    } else {
+      return {
+        icon: '📍',
+        text: setting.searchLocation || 'Unknown Location',
+      };
+    }
+  };
+
   const handleApplyFilter = (settingId: string) => {
     applySavedFilterSetting(settingId);
     onClose();
@@ -97,40 +112,50 @@ const AppliedFiltersModal: React.FC<AppliedFiltersModalProps> = ({
     );
   };
 
-  const renderFilterItem = ({ item }: { item: FilterSetting }) => (
-    <View style={styles.filterItem}>
-      <TouchableOpacity
-        style={styles.filterContent}
-        onPress={() => handleApplyFilter(item.id)}
-      >
-        <View style={styles.filterHeader}>
-          <Text style={styles.filterName}>{item.name}</Text>
-          <View style={styles.filterBadge}>
-            <Text style={styles.filterBadgeText}>{item.activeTab}</Text>
+  const renderFilterItem = ({ item }: { item: FilterSetting }) => {
+    const locationDisplay = getLocationDisplay(item);
+
+    return (
+      <View style={styles.filterItem}>
+        <TouchableOpacity
+          style={styles.filterContent}
+          onPress={() => handleApplyFilter(item.id)}
+        >
+          <View style={styles.filterHeader}>
+            <Text style={styles.filterName}>{item.name}</Text>
+            <View style={styles.filterBadge}>
+              <Text style={styles.filterBadgeText}>{item.activeTab}</Text>
+            </View>
           </View>
-        </View>
 
-        <Text style={styles.filterLocation}>
-          📍 {item.searchLocation} • {item.radiusInMiles} miles
-        </Text>
+          <View style={styles.locationContainer}>
+            <Text style={styles.filterLocation}>
+              {locationDisplay.icon} {locationDisplay.text}
+            </Text>
+          </View>
 
-        <Text style={styles.filterSummary}>
-          {getFilterSummary(item)}
-        </Text>
+          <Text style={styles.filterDetails}>
+            {item.radiusInMiles} miles • Sort: {sortByLabels[item.sortBy] || item.sortBy}
+          </Text>
 
-        <Text style={styles.filterDate}>
-          {formatDate(item.timestamp)}
-        </Text>
-      </TouchableOpacity>
+          <Text style={styles.filterSummary}>
+            {getFilterSummary(item)}
+          </Text>
 
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => handleDeleteFilter(item.id, item.name)}
-      >
-        <Ionicons name="trash-outline" size={20} color={theme.colors.error || '#ff6b6b'} />
-      </TouchableOpacity>
-    </View>
-  );
+          <Text style={styles.filterDate}>
+            {formatDate(item.timestamp)}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteFilter(item.id, item.name)}
+        >
+          <Ionicons name="trash-outline" size={20} color={theme.colors.error || '#ff6b6b'} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   const styles = createStyles(theme);
 
@@ -267,7 +292,21 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.background,
     fontWeight: '500',
   },
+  locationContainer: {
+    marginBottom: theme.spacing.xs,
+  },
   filterLocation: {
+    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontWeight: '500',
+  },
+  locationSubtitle: {
+    fontSize: 12,
+    color: theme.colors.textLight,
+    marginTop: 2,
+    marginLeft: 16, // Indent to align with text after emoji
+  },
+  filterDetails: {
     fontSize: 14,
     color: theme.colors.textSecondary,
     marginBottom: theme.spacing.xs,

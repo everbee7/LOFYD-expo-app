@@ -1,17 +1,33 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Dimensions, FlatList, TextInput, Image, Modal, RefreshControl, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import useLocationStore from '@/store/locationStore';
 import { locationService } from '@/services/location';
 import { useDebounce } from '@/hooks/useDebounce';
+import { formatSearchedLocation } from '@/utils/format';
 
 // Components
 import FilterBar from '../../components/FilterBar';
 import LocationItem from '../../components/LocationItem';
-import FilterModal from '../../components/dshboard/FilterModal';
+import FilterModal, { serviceTypes, priceRanges, sortOptions } from '../../components/dshboard/FilterModal';
 import AppliedFiltersModal from '../../components/dshboard/AppliedFiltersModal';
-import { useFocusEffect } from '@react-navigation/native';
+
+const serviceTypeLabels = serviceTypes.reduce((acc, service) => {
+  acc[service.key] = service.label;
+  return acc;
+}, {} as { [key: string]: string });
+
+const priceRangeLabels = priceRanges.reduce((acc, price) => {
+  acc[price.value] = price.label;
+  return acc;
+}, {} as { [key: number]: string });
+
+export const sortByLabels = sortOptions.reduce((acc, option) => {
+  acc[option.value] = option.label;
+  return acc;
+}, {} as { [key: string]: string });
 
 // Filter item interface
 interface FilterItem {
@@ -28,6 +44,7 @@ export default function DashboardScreen() {
     locations,
     isLoading,
     error,
+    isCurrentLocation,
     searchLocation,
     searchedLocation,
     radiusInMiles,
@@ -109,7 +126,7 @@ export default function DashboardScreen() {
       filterItems.push({
         type: 'serviceType',
         value: serviceType,
-        displayText: `Service: ${serviceType}`,
+        displayText: `Service: ${serviceTypeLabels[serviceType] || serviceType}`,
         originalIndex: index++
       });
     });
@@ -151,7 +168,7 @@ export default function DashboardScreen() {
       filterItems.push({
         type: 'priceRange',
         value: price.toString(),
-        displayText: `Price: ${'$'.repeat(price)}`,
+        displayText: `Price: ${priceRangeLabels[price] || '$'.repeat(price)}`,
         originalIndex: index++
       });
     });
@@ -259,6 +276,8 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
+
       {/* Top Header Section */}
       <View style={styles.headerSection}>
         <View style={styles.headerWrap}>
@@ -372,7 +391,7 @@ export default function DashboardScreen() {
               style={styles.locationIcon}
             />
             <Text style={styles.locationText}>
-              {searchedLocation || 'Set location in filters'} • {radiusInMiles} miles • Sort: {sortBy}
+              {isCurrentLocation ? "Current Location" : formatSearchedLocation(searchedLocation) || 'Set location in filters'} • {radiusInMiles} miles • Sort: {sortByLabels[sortBy] || sortBy}
             </Text>
           </View>
           <Text style={styles.resultsText}>
@@ -488,6 +507,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   savedFilterBadge: {
     fontSize: 10,
+    lineHeight: 10,
     color: theme.colors.background,
     borderRadius: 12,
     textAlign: 'center',

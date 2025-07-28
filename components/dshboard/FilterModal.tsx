@@ -30,6 +30,50 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Use the same key as AuthStore and ProfileScreen
 const LOCATION_PERMISSION_KEY = 'userLocationPermissionStatus';
 
+export const serviceTypes = [{
+  key: 'dine-in',
+  label: 'Dine In',
+  icon: "table-restaurant",
+}, {
+  key: 'take-out',
+  label: 'Takeout',
+  icon: "takeout-dining",
+}, {
+  key: 'delivery',
+  label: 'Delivery',
+  icon: "delivery-dining",
+}];
+
+export const priceRanges = [
+  { value: 1, label: '$' },
+  { value: 2, label: '$$' },
+  { value: 3, label: '$$$' },
+  { value: 4, label: '$$$$' }
+];
+
+export const experiences = [
+  'Live Music', 'Romance', 'Karaoke', 'Dance Floor',
+  'Games', 'Outdoor Seating'
+];
+
+export const cuisines = [
+  'American', 'Mexican', 'Italian', 'Greek', 'Chinese', 'Japanese', 'Indian',
+  'Mediterranean', 'South American', 'Texas Mex'
+];
+
+export const tastes = [
+  'BBQ', 'Tacos', 'Soul Food', 'Sushi', 'Bagel', 'Sandwich', 'Pizza', 'Thai', 'Hamburger',
+  'Steak', 'Salmon', 'Seafood', 'Pasta', 'Beer', 'Wine', 'Margarita'
+];
+
+export const distances = [0.5, 2, 10, 15, 20, 25];
+
+export const sortOptions = [
+  { value: 'relevance', label: 'Relevance' },
+  { value: 'distance', label: 'Distance' },
+  // { value: 'favorites', label: 'Favorites' }
+];
+
 interface FilterModalProps {
   visible: boolean;
   onClose: () => void;
@@ -73,7 +117,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isLocationEnabled, setIsLocationEnabled] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<{ latitude: number, longitude: number } | null>(null);
 
   // Collapse states for each section
   const [collapsedSections, setCollapsedSections] = useState({
@@ -105,29 +148,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
       checkLocationPermission();
     }
   }, [visible]);
-
-  // Get current location when modal opens
-  useEffect(() => {
-    const getCurrentLocation = async () => {
-      if (visible && isLocationEnabled) {
-        try {
-          const location = await Location.getCurrentPositionAsync({
-            accuracy: Location.Accuracy.Balanced,
-            timeInterval: 10000,
-            distanceInterval: 100,
-          });
-          setCurrentLocation({
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude
-          });
-        } catch (error) {
-          console.log('Could not get current location:', error);
-        }
-      }
-    };
-
-    getCurrentLocation();
-  }, [visible, isLocationEnabled]);
 
   // Initialize state with current store values when modal opens
   useFocusEffect(
@@ -195,50 +215,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
     onClose();
   };
 
-  const serviceTypes = [{
-    key: 'dine-in',
-    label: 'Dine In',
-    icon: "table-restaurant",
-  }, {
-    key: 'take-out',
-    label: 'Takeout',
-    icon: "takeout-dining",
-  }, {
-    key: 'delivery',
-    label: 'Delivery',
-    icon: "delivery-dining",
-  }];
-
-  const priceRanges = [
-    { value: 1, label: '$' },
-    { value: 2, label: '$$' },
-    { value: 3, label: '$$$' },
-    { value: 4, label: '$$$$' }
-  ];
-
-  const experiences = [
-    'Live Music', 'Romance', 'Karaoke', 'Dance Floor',
-    'Games', 'Outdoor Seating'
-  ];
-
-  const cuisines = [
-    'American', 'Mexican', 'Italian', 'Greek', 'Chinese', 'Japanese', 'Indian',
-    'Mediterranean', 'South American', 'Texas Mex'
-  ];
-
-  const tastes = [
-    'BBQ', 'Tacos', 'Soul Food', 'Sushi', 'Bagel', 'Sandwich', 'Pizza', 'Thai', 'Hamburger',
-    'Steak', 'Salmon', 'Seafood', 'Pasta', 'Beer', 'Wine', 'Margarita'
-  ];
-
-  const distances = [0.5, 2, 10, 15, 20, 25];
-
-  const sortOptions = [
-    { value: 'relevance', label: 'Relevance' },
-    { value: 'distance', label: 'Distance' },
-    // { value: 'favorites', label: 'Favorites' }
-  ];
-
   const styles = createStyles(theme);
 
   const toggleSelection = (
@@ -296,33 +272,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
   };
 
   const handleApplyFilters = async () => {
-    // Get device location when applying filters
-    if (isCurrentLocationSwitch && isLocationEnabled) {
-      try {
-        setIsGettingLocation(true);
-        const location = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-          timeInterval: 10000,
-          distanceInterval: 100,
-        });
-
-        const { latitude, longitude } = location.coords;
-        const coordinatesString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
-
-        // Save device location as coordinates
-        setDeviceLocation(coordinatesString, 'coords');
-      } catch (error) {
-        console.log('Could not get device location:', error);
-        // Clear device location if failed
-        setDeviceLocation('', 'coords');
-      } finally {
-        setIsGettingLocation(false);
-      }
-    } else {
-      // Clear device location if location services disabled
-      setDeviceLocation('', 'coords');
-    }
-
     // Apply all filters in one operation
     const keywordArray = parseKeywords(tempKeywords);
 

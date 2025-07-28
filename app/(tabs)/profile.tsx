@@ -135,7 +135,7 @@ export default function ProfileScreen() {
         // Get both stored permission status and actual device permission
         const storedPermissionStatus = await AsyncStorage.getItem(LOCATION_PERMISSION_KEY);
         const { status: devicePermissionStatus } = await Location.getForegroundPermissionsAsync();
-        
+
         let isLocationEnabled = false;
 
         // Determine if location is truly enabled
@@ -234,7 +234,7 @@ export default function ProfileScreen() {
       try {
         // First check current permission status
         const { status: currentStatus } = await Location.getForegroundPermissionsAsync();
-        
+
         if (currentStatus === 'granted') {
           // Already granted, just update storage and state
           await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'granted');
@@ -276,7 +276,7 @@ export default function ProfileScreen() {
 
           // Check if we can ask again or if it's permanently denied
           const { canAskAgain } = await Location.getForegroundPermissionsAsync();
-          
+
           if (!canAskAgain) {
             Alert.alert(
               'Location Permission Required',
@@ -308,7 +308,7 @@ export default function ProfileScreen() {
         );
 
         await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'denied');
-        
+
         Alert.alert(
           'Error',
           'Unable to request location permission. Please try again.',
@@ -399,6 +399,8 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>

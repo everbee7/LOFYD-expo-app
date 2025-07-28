@@ -54,24 +54,50 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
   // Helper function to create a safe date
   const createSafeDate = (dateString: string): Date => {
     if (!dateString) return new Date(1990, 0, 1); // Default fallback
-    
-    const date = new Date(dateString);
-    if (!isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2030) {
-      return date;
+
+    try {
+      // Handle mm/dd/yyyy format (e.g., "1/11/2017")
+      if (dateString.includes('/')) {
+        const parts = dateString.split('/');
+        if (parts.length === 3) {
+          const month = parseInt(parts[0], 10) - 1; // Month is 0-indexed
+          const day = parseInt(parts[1], 10);
+          const year = parseInt(parts[2], 10);
+
+          // Validate the parsed values
+          if (!isNaN(month) && !isNaN(day) && !isNaN(year) &&
+            month >= 0 && month <= 11 &&
+            day >= 1 && day <= 31 &&
+            year > 1900 && year < 2030) {
+            return new Date(year, month, day);
+          }
+        }
+      }
+
+      // Try parsing as ISO string or other standard formats
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2030) {
+        return date;
+      }
+    } catch (error) {
+      console.error('Date parsing error:', error);
     }
+
     return new Date(1990, 0, 1); // Fallback to safe date
   };
 
   useEffect(() => {
-    setFormData(userInfo);
-    
-    // Initialize date with better validation
-    try {
-      const safeDate = createSafeDate(userInfo.birthDate);
-      setSelectedDate(safeDate);
-    } catch (error) {
-      console.error('Date initialization error:', error);
-      setSelectedDate(new Date(1990, 0, 1));
+    if (userInfo) {
+      setFormData(userInfo);
+
+      // Initialize date with better validation
+      try {
+        const safeDate = createSafeDate(userInfo.birthDate);
+        setSelectedDate(safeDate);
+      } catch (error) {
+        console.error('Date initialization error:', error);
+        setSelectedDate(new Date(1990, 0, 1));
+      }
     }
   }, [userInfo]);
 
@@ -90,7 +116,7 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
   const handleCancel = () => {
     setFormData(userInfo);
     setIsEditing(false);
-    
+
     // Reset date picker
     try {
       const safeDate = createSafeDate(userInfo.birthDate);
@@ -171,10 +197,10 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
             ]}>
               {formData.birthDate || 'Select birthday'}
             </Text>
-            <Ionicons 
-              name="calendar-outline" 
-              size={20} 
-              color={isEditing ? theme.colors.primary : theme.colors.textSecondary} 
+            <Ionicons
+              name="calendar-outline"
+              size={20}
+              color={isEditing ? theme.colors.primary : theme.colors.textSecondary}
             />
           </TouchableOpacity>
         </View>
@@ -213,7 +239,7 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
             onRequestClose={handleDatePickerCancel}
           >
             <View style={styles.datePickerModalOverlay}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.datePickerModalBackdrop}
                 activeOpacity={1}
                 onPress={handleDatePickerCancel}
@@ -273,13 +299,13 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
         ]}>
           {formData.eatOutFrequency ? getFrequencyLabel(formData.eatOutFrequency) : 'Select frequency'}
         </Text>
-        <Ionicons 
+        <Ionicons
           name="chevron-down"
-          size={20} 
-          color={isEditing ? theme.colors.primary : theme.colors.textSecondary} 
+          size={20}
+          color={isEditing ? theme.colors.primary : theme.colors.textSecondary}
         />
       </TouchableOpacity>
-      
+
       {/* Bottom Sheet Modal */}
       <Modal
         visible={showFrequencyDropdown}
@@ -288,7 +314,7 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
         onRequestClose={() => setShowFrequencyDropdown(false)}
       >
         <View style={styles.modalOverlay}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.modalBackdrop}
             activeOpacity={1}
             onPress={() => setShowFrequencyDropdown(false)}
@@ -298,14 +324,14 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
             <View style={styles.bottomSheetHeader}>
               <View style={styles.bottomSheetHandle} />
               <Text style={styles.bottomSheetTitle}>How often do you go out to eat?</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setShowFrequencyDropdown(false)}
                 style={styles.bottomSheetClose}
               >
                 <Ionicons name="close" size={24} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
-            
+
             {/* Options */}
             <ScrollView style={styles.bottomSheetContent}>
               {FREQUENCY_OPTIONS.map((option, index) => (
@@ -354,8 +380,8 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
           onChangeText={(text) => setFormData({ ...formData, email: text })}
           keyboardType="email-address"
           autoCapitalize="none"
-          editable={isEditing}
-          style={isEditing ? {} : styles.readOnlyInput}
+          editable={false}
+          style={styles.readOnlyInput}
         />
 
         {/* First Name Input */}
@@ -444,7 +470,7 @@ const MyInfoSection: React.FC<MyInfoSectionProps> = ({
       </View>
 
       {/* Loading Overlay */}
-      <LoadingOverlay 
+      <LoadingOverlay
         visible={loading}
         text={loadingText}
       />
@@ -486,7 +512,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   editActionButton: {
     flex: 1,
   },
-  
+
   // DatePicker styles
   datePickerContainer: {
     marginBottom: theme.spacing.md,
@@ -520,7 +546,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   datePickerPlaceholder: {
     color: theme.colors.textSecondary,
   },
-  
+
   // iOS DatePicker Modal styles
   datePickerModalOverlay: {
     flex: 1,
@@ -562,7 +588,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   datePickerIOS: {
     height: 200,
   },
-  
+
   // Dropdown styles
   dropdownContainer: {
     marginBottom: theme.spacing.xl,
