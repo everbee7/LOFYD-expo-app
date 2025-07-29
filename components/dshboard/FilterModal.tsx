@@ -251,7 +251,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
         [
           {
             text: 'Enable Location',
-            onPress: () => router.push('/profile?activeTab=settings')
+            onPress: () => {
+              onClose();
+              router.push('/(tabs)/profile?activeTab=settings');
+            }
           },
           {
             text: 'Not Now',
@@ -814,6 +817,7 @@ const createStyles = (theme: any) => {
     searchInput: {
       flex: 1,
       fontSize: 12,
+      lineHeight: 14,
       color: theme.colors.text,
     },
     currentLocationSwitchButton: {
@@ -828,7 +832,6 @@ const createStyles = (theme: any) => {
       fontSize: 12,
       fontWeight: '600',
       color: theme.colors.primary,
-      marginLeft: theme.spacing.xs,
     },
     locationInputContainer: {
       flexDirection: 'row',

@@ -14,7 +14,7 @@ import LocationItem from '../../components/LocationItem';
 import FilterModal, { serviceTypes, priceRanges, sortOptions } from '../../components/dshboard/FilterModal';
 import AppliedFiltersModal from '../../components/dshboard/AppliedFiltersModal';
 
-const serviceTypeLabels = serviceTypes.reduce((acc, service) => {
+export const serviceTypeLabels = serviceTypes.reduce((acc, service) => {
   acc[service.key] = service.label;
   return acc;
 }, {} as { [key: string]: string });
@@ -126,7 +126,8 @@ export default function DashboardScreen() {
       filterItems.push({
         type: 'serviceType',
         value: serviceType,
-        displayText: `Service: ${serviceTypeLabels[serviceType] || serviceType}`,
+        // displayText: `Service: ${serviceTypeLabels[serviceType] || serviceType}`,
+        displayText: `${serviceTypeLabels[serviceType] || serviceType}`,
         originalIndex: index++
       });
     });
@@ -138,7 +139,8 @@ export default function DashboardScreen() {
       filterItems.push({
         type: 'cuisine',
         value: cuisine,
-        displayText: `Cuisine: ${cuisine}`,
+        // displayText: `Cuisine: ${cuisine}`,
+        displayText: `${cuisine}`,
         originalIndex: index++
       });
     });
@@ -148,7 +150,8 @@ export default function DashboardScreen() {
       filterItems.push({
         type: 'experience',
         value: experience,
-        displayText: `Experience: ${experience}`,
+        // displayText: `Experience: ${experience}`,
+        displayText: `${experience}`,
         originalIndex: index++
       });
     });
@@ -158,7 +161,8 @@ export default function DashboardScreen() {
       filterItems.push({
         type: 'taste',
         value: taste,
-        displayText: `Taste: ${taste}`,
+        // displayText: `Taste: ${taste}`,
+        displayText: `${taste}`,
         originalIndex: index++
       });
     });
@@ -168,7 +172,8 @@ export default function DashboardScreen() {
       filterItems.push({
         type: 'priceRange',
         value: price.toString(),
-        displayText: `Price: ${priceRangeLabels[price] || '$'.repeat(price)}`,
+        // displayText: `Price: ${priceRangeLabels[price] || '$'.repeat(price)}`,
+        displayText: `${priceRangeLabels[price] || '$'.repeat(price)}`,
         originalIndex: index++
       });
     });

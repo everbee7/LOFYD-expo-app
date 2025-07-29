@@ -22,6 +22,7 @@ import Tabs from '@/components/common/Tabs';
 import useLocationStore from '@/store/locationStore';
 import { specialService } from '@/services/special';
 import { Location, Special } from '@/types/location';
+import { serviceTypeLabels } from '@/app/(tabs)/dashboard';
 
 export default function LocationDetail() {
   const { id, specialId } = useLocalSearchParams();
@@ -602,7 +603,9 @@ export default function LocationDetail() {
               {location.serviceType && location.serviceType.length > 0 && (
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Service Types:</Text>
-                  <Text style={styles.detailValue}>{location.serviceType.join(', ')}</Text>
+                  <Text style={styles.detailValue}>{location.serviceType.map((_service) => {
+                    return serviceTypeLabels[_service]
+                  }).join(', ')}</Text>
                 </View>
               )}
 
