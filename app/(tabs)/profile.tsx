@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,24 +8,21 @@ import {
   ScrollView,
   StatusBar,
   Alert,
-  Linking
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../contexts/ThemeContext';
-import * as Location from 'expo-location';
 
 // Import components
 import Tabs from '../../components/common/Tabs';
 import MyInfoSection from '../../components/profile/MyInfoSection';
 import SettingsSection from '../../components/profile/SettingsSection';
 import useAuthStore from '@/store/authStore';
-import { biometricService } from '@/services/biometric';
 import { authService } from '@/services/auth';
-
-// Use the same key as AuthStore
-const LOCATION_PERMISSION_KEY = 'userLocationPermissionStatus';
+import { biometricService } from '@/services/biometric';
+import { locationService } from '@/services/location';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface UserInfo {
   firstName: string;
@@ -127,50 +124,33 @@ export default function ProfileScreen() {
   }, []);
 
   // Check location permission status when component loads
-  useEffect(() => {
-    const syncLocationSetting = async () => {
-      try {
-        // Get both stored permission status and actual device permission
-        const storedPermissionStatus = await AsyncStorage.getItem(LOCATION_PERMISSION_KEY);
-        const { status: devicePermissionStatus } = await Location.getForegroundPermissionsAsync();
-
-        let isLocationEnabled = false;
-
-        // Determine if location is truly enabled
-        if (devicePermissionStatus === 'granted') {
-          isLocationEnabled = true;
-          // Update storage to reflect actual status
-          if (storedPermissionStatus !== 'granted') {
-            await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'granted');
-          }
-        } else {
-          // Device permission not granted
-          isLocationEnabled = false;
-          // If we had it stored as granted but device says no, update storage
-          if (storedPermissionStatus === 'granted') {
-            await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'denied');
-          }
+  useFocusEffect((
+    useCallback(() => {
+      const syncLocationSetting = async () => {
+        try {
+          console.log('syncLocationSetting');
+          const status = await locationService.getStoredPermissionStatus();
+          const isLocationEnabled = status === 'granted';
+  
+          // Update settings state to reflect actual status
+          setSettingsData(prev =>
+            prev.map(setting =>
+              setting.id === 'location' ? { ...setting, value: isLocationEnabled } : setting
+            )
+          );
+        } catch (error) {
+          console.error('Error checking location permission:', error);
+          // Default to false if there's an error
+          setSettingsData(prev =>
+            prev.map(setting =>
+              setting.id === 'location' ? { ...setting, value: false } : setting
+            )
+          );
         }
-
-        // Update settings state to reflect actual status
-        setSettingsData(prev =>
-          prev.map(setting =>
-            setting.id === 'location' ? { ...setting, value: isLocationEnabled } : setting
-          )
-        );
-      } catch (error) {
-        console.error('Error checking location permission:', error);
-        // Default to false if there's an error
-        setSettingsData(prev =>
-          prev.map(setting =>
-            setting.id === 'location' ? { ...setting, value: false } : setting
-          )
-        );
-      }
-    };
-
-    syncLocationSetting();
-  }, []);
+      };
+      syncLocationSetting();
+    }, [])
+  ));
 
   const styles = createStyles(theme);
 
@@ -230,72 +210,29 @@ export default function ProfileScreen() {
   const handleLocationToggle = async (enabled: boolean) => {
     if (enabled) {
       try {
-        // First check current permission status
-        const { status: currentStatus } = await Location.getForegroundPermissionsAsync();
+        // Use the comprehensive permission flow
+        const granted = await locationService.handleLocationPermissionFlow();
 
-        if (currentStatus === 'granted') {
-          // Already granted, just update storage and state
-          await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'granted');
+        if (granted) {
+          // Permission granted, update state
           setSettingsData(prev =>
             prev.map(setting =>
               setting.id === 'location' ? { ...setting, value: true } : setting
             )
           );
-          return;
-        }
-
-        // Request location permission
-        const { status } = await Location.requestForegroundPermissionsAsync();
-
-        if (status === 'granted') {
-          // Permission granted, update state and storage
-          setSettingsData(prev =>
-            prev.map(setting =>
-              setting.id === 'location' ? { ...setting, value: true } : setting
-            )
-          );
-
-          await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'granted');
 
           Alert.alert(
             'Location Enabled',
             'You can now use current location features in the app.',
             [{ text: 'OK' }]
           );
-        } else if (status === 'denied') {
+        } else {
           // Permission denied, keep toggle off
           setSettingsData(prev =>
             prev.map(setting =>
               setting.id === 'location' ? { ...setting, value: false } : setting
             )
           );
-
-          await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'denied');
-
-          // Check if we can ask again or if it's permanently denied
-          const { canAskAgain } = await Location.getForegroundPermissionsAsync();
-
-          if (!canAskAgain) {
-            Alert.alert(
-              'Location Permission Required',
-              'Location services are required for location-based features. Please enable them in your device settings.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Open Settings',
-                  onPress: () => {
-                    Linking.openSettings();
-                  }
-                }
-              ]
-            );
-          } else {
-            Alert.alert(
-              'Location Permission Denied',
-              'Location services are required for location-based features. You can enable them later in settings.',
-              [{ text: 'OK' }]
-            );
-          }
         }
       } catch (error) {
         console.error('Error requesting location permission:', error);
@@ -304,8 +241,6 @@ export default function ProfileScreen() {
             setting.id === 'location' ? { ...setting, value: false } : setting
           )
         );
-
-        await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'denied');
 
         Alert.alert(
           'Error',
@@ -321,7 +256,7 @@ export default function ProfileScreen() {
         )
       );
 
-      await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'denied');
+      await locationService.setStoredPermissionStatus('denied');
 
       Alert.alert(
         'Location Disabled',

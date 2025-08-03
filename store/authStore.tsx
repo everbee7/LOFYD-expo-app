@@ -6,8 +6,8 @@ import { router } from 'expo-router';
 import { authService } from '../services/auth';
 import { BIOMETRIC_USER_ID, BIOMETRIC_USER_REFRESH_TOKEN_KEY, BIOMETRIC_USER_TOKEN_KEY, biometricService } from '../services/biometric';
 import { AuthState, User, SignUpRequest, UserProfileRequest } from '../types/auth';
+import { locationService } from '@/services/location';
 
-const LOCATION_PERMISSION_KEY = 'userLocationPermissionStatus';
 const BIOMETRIC_ALARM_AT_FIRST_KEY = 'BIOMETRIC_ALARM_AT_FIRST_KEY';
 
 const useAuthStore = create<AuthState>((set, get) => ({
@@ -41,42 +41,6 @@ const useAuthStore = create<AuthState>((set, get) => ({
 		} catch (error) {
 			console.error('Failed to initialize auth:', error);
 			set({ isLoading: false, error: 'Failed to initialize authentication' });
-		}
-	},
-
-	// Helper function to check and request location permission
-	checkAndRequestLocationPermission: async (): Promise<boolean> => {
-		try {
-			// Check current permission status from device
-			const { status: currentStatus } = await Location.getForegroundPermissionsAsync();
-
-			// Get stored permission preference
-			const storedPermissionStatus = await AsyncStorage.getItem(LOCATION_PERMISSION_KEY);
-
-			// If permission is already granted, update storage and return true
-			if (currentStatus === 'granted') {
-				await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'granted');
-				return true;
-			}
-
-			// If we haven't asked before or user previously wanted location services
-			if (storedPermissionStatus === null || storedPermissionStatus === 'granted') {
-				// Request permission
-				const { status: requestStatus } = await Location.requestForegroundPermissionsAsync();
-
-				// Store the result
-				await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, requestStatus);
-
-				return requestStatus === 'granted';
-			}
-
-			// Permission was previously denied
-			return false;
-		} catch (error) {
-			console.error('Failed to check/request location permission:', error);
-			// Store that we couldn't get permission
-			await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'denied');
-			return false;
 		}
 	},
 
@@ -115,24 +79,24 @@ const useAuthStore = create<AuthState>((set, get) => ({
 			);
 
 			// Handle location permission on first login
-			const storedPermissionStatus = await AsyncStorage.getItem(LOCATION_PERMISSION_KEY);
+			const storedPermissionStatus = await locationService.getStoredPermissionStatus();
 			console.log("storedPermissionStatus", storedPermissionStatus);
 			// Check if this is first time or if user previously allowed location
-			if (storedPermissionStatus === null || storedPermissionStatus === 'granted') {
+			if (storedPermissionStatus === null) {
 				// Check current device permission status
-				const { status: currentStatus } = await Location.getForegroundPermissionsAsync();
+				const currentPermission = await locationService.checkLocationPermission();
 
 				// If permission not granted yet, request it
-				if (currentStatus !== 'granted') {
+				if (!currentPermission) {
 					try {
-						const locationGranted = await get().checkAndRequestLocationPermission();
+						const locationGranted = await locationService.handleLocationPermissionFlow();
 						console.log('Location permission granted:', locationGranted);
 					} catch (error) {
 						console.error('Error requesting location permission:', error);
 					}
 				} else {
 					// Permission already granted, just update storage
-					await AsyncStorage.setItem(LOCATION_PERMISSION_KEY, 'granted');
+					await locationService.setStoredPermissionStatus('granted');
 				}
 			}
 

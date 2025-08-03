@@ -131,25 +131,15 @@ const FilterModal: React.FC<FilterModalProps> = ({
   // Check location permission status when modal opens
   const checkLocationPermission = async () => {
     try {
-      const storedPermissionStatus = await AsyncStorage.getItem(LOCATION_PERMISSION_KEY);
-
-      // Determine if location is truly enabled
-      let isEnabled = storedPermissionStatus === 'granted';
-
-      setIsLocationEnabled(isEnabled);
-      return isEnabled;
+      const status = await locationService.getStoredPermissionStatus();
+      setIsLocationEnabled(status === 'granted');
+      return status === 'granted';
     } catch (error) {
       console.error('Error checking location permission:', error);
       setIsLocationEnabled(false);
       return false;
     }
   };
-
-  useEffect(() => {
-    if (visible) {
-      checkLocationPermission();
-    }
-  }, [visible]);
 
   // Initialize state with current store values when modal opens
   useFocusEffect(
@@ -164,21 +154,26 @@ const FilterModal: React.FC<FilterModalProps> = ({
         setSelectedCuisines([...activeFilters.cuisine]);
         setSelectedTastes([...activeFilters.taste]);
         setSelectedDistance(radiusInMiles);
-        console.log('radiusInMiles', radiusInMiles);
         setSelectedSortBy(sortBy);
       }
     }, [visible, activeFilters, searchLocation, radiusInMiles, sortBy, user?.postalCode])
   );
 
   useEffect(() => {
-    if (visible) {
-      if (isLocationEnabled) {
+    const checkLocation = async () => {
+      const isEnabled = await checkLocationPermission();
+      console.log('isEnabled', isEnabled);
+      if (isEnabled) {
         setIsCurrentLocationSwitch(!!isCurrentLocation);
       } else {
         setIsCurrentLocationSwitch(false);
       }
+    };
+
+    if (visible) {
+      checkLocation();
     }
-  }, [visible, isCurrentLocation, isLocationEnabled])
+  }, [visible, isCurrentLocation])
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = () => {
@@ -247,23 +242,13 @@ const FilterModal: React.FC<FilterModalProps> = ({
     if (isEnabled) {
       setIsCurrentLocationSwitch(true);
     } else {
-      Alert.alert(
-        'Location Services',
-        'To find services near you, we need access to your location. Would you like to enable location services in settings?',
-        [
-          {
-            text: 'Enable Location',
-            onPress: () => {
-              onClose();
-              router.push('/(tabs)/profile?activeTab=settings');
-            }
-          },
-          {
-            text: 'Not Now',
-            style: 'cancel'
-          }
-        ]
-      );
+      // Use locationService to handle permission flow directly
+      const granted = await locationService.handleLocationPermissionFlow();
+      console.log('granted', granted);
+      if (granted === true) {
+        setIsCurrentLocationSwitch(true);
+        setIsLocationEnabled(true);
+      }
     }
   };
 

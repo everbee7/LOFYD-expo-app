@@ -152,5 +152,4 @@ export interface AuthState {
   
   // Utility methods
   clearError: () => void;
-  checkAndRequestLocationPermission: () => void;
 }
