@@ -20,6 +20,7 @@ import { router } from 'expo-router';
 import { ServiceType } from '@/types/location';
 import ToggleButton from '@/components/common/ToggleButton';
 import ConfirmationPopup from '@/components/common/ConfirmationPopup';
+import useAuthStore from '@/store/authStore';
 import useLocationStore from '@/store/locationStore';
 import { locationService } from '@/services/location';
 import SaveFilterModal from './SaveFilterModal';
@@ -101,8 +102,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setFilters,
     searchWithCurrentParams
   } = useLocationStore();
+  const { user } = useAuthStore();
 
-  const [tempSearchLocation, setTempSearchLocation] = useState('');
+  const [tempSearchLocation, setTempSearchLocation] = useState(user?.postalCode || '');
   const [tempKeywords, setTempKeywords] = useState('');
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState<number[]>([]);
@@ -153,7 +155,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
   useFocusEffect(
     useCallback(() => {
       if (visible) {
-        setTempSearchLocation(searchLocation);
+        setTempSearchLocation(searchLocation || user?.postalCode || '');
         // Convert keywords array to comma-separated string
         setTempKeywords(activeFilters.keywords.join(', '));
         setSelectedServiceTypes([...activeFilters.serviceType]);
@@ -165,7 +167,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
         console.log('radiusInMiles', radiusInMiles);
         setSelectedSortBy(sortBy);
       }
-    }, [visible, activeFilters, searchLocation, radiusInMiles, sortBy])
+    }, [visible, activeFilters, searchLocation, radiusInMiles, sortBy, user?.postalCode])
   );
 
   useEffect(() => {

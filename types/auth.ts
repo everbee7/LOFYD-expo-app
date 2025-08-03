@@ -127,6 +127,7 @@ export interface UserProfileResponse {
 export interface AuthState {
   user: User | null;
   isLoading: boolean;
+  isJustLoggedOut: boolean;
   error: string | null;
   
   // Core auth methods

@@ -24,7 +24,7 @@ import { biometricService } from '../../services/biometric';
 export default function LoginScreen() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { login, error, clearError } = useAuthStore();
+  const { login, error, clearError, isJustLoggedOut } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [showBiometric, setShowBiometric] = useState(false);
   const [showPasswordLogin, setShowPasswordLogin] = useState(false);
@@ -45,7 +45,7 @@ export default function LoginScreen() {
       const isBiometricEnabled = await biometricService.isBiometricEnabled();
       const capabilities = await biometricService.checkCapabilities();
 
-      if (isBiometricEnabled && capabilities.isAvailable && capabilities.isEnrolled) {
+      if (isBiometricEnabled && capabilities.isAvailable && capabilities.isEnrolled && !isJustLoggedOut) {
         setShowBiometric(true);
       } else {
         setShowPasswordLogin(true);

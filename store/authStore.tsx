@@ -12,6 +12,7 @@ const BIOMETRIC_ALARM_AT_FIRST_KEY = 'BIOMETRIC_ALARM_AT_FIRST_KEY';
 
 const useAuthStore = create<AuthState>((set, get) => ({
 	user: null,
+	isJustLoggedOut: false,
 	isLoading: true,
 	error: null,
 
@@ -258,7 +259,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
 		try {
 			await AsyncStorage.removeItem('idToken');
 
-			set({ user: null, error: null });
+			set({ user: null, error: null, isJustLoggedOut: true });
 		} catch (error: any) {
 			console.error('Failed to logout:', error);
 			// Still clear user state even if AsyncStorage fails
