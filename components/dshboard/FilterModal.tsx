@@ -144,8 +144,16 @@ const FilterModal: React.FC<FilterModalProps> = ({
   // Initialize state with current store values when modal opens
   useFocusEffect(
     useCallback(() => {
+      const checkLocation = async () => {
+        const isEnabled = await checkLocationPermission();
+        setIsCurrentLocationSwitch(isEnabled);
+      };
+
       if (visible) {
         setTempSearchLocation(searchLocation || user?.postalCode || '');
+        if (isCurrentLocation) {
+          checkLocation();
+        }
         // Convert keywords array to comma-separated string
         setTempKeywords(activeFilters.keywords.join(', '));
         setSelectedServiceTypes([...activeFilters.serviceType]);
@@ -156,24 +164,8 @@ const FilterModal: React.FC<FilterModalProps> = ({
         setSelectedDistance(radiusInMiles);
         setSelectedSortBy(sortBy);
       }
-    }, [visible, activeFilters, searchLocation, radiusInMiles, sortBy, user?.postalCode])
+    }, [visible, activeFilters, isCurrentLocation, searchLocation, radiusInMiles, sortBy, user?.postalCode])
   );
-
-  useEffect(() => {
-    const checkLocation = async () => {
-      const isEnabled = await checkLocationPermission();
-      console.log('isEnabled', isEnabled);
-      if (isEnabled) {
-        setIsCurrentLocationSwitch(!!isCurrentLocation);
-      } else {
-        setIsCurrentLocationSwitch(false);
-      }
-    };
-
-    if (visible) {
-      checkLocation();
-    }
-  }, [visible, isCurrentLocation])
 
   // Check if there are unsaved changes
   const hasUnsavedChanges = () => {
@@ -183,6 +175,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
     return (
       tempSearchLocation !== searchLocation ||
       tempKeywords !== currentKeywords ||
+      isCurrentLocationSwitch !== isCurrentLocation ||
       JSON.stringify(selectedServiceTypes.sort()) !== JSON.stringify([...activeFilters.serviceType].sort()) ||
       JSON.stringify(selectedPriceRanges.sort()) !== JSON.stringify([...activeFilters.priceRange].sort()) ||
       JSON.stringify(selectedExperiences.sort()) !== JSON.stringify([...activeFilters.experience].sort()) ||
