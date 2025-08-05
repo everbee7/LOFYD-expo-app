@@ -117,7 +117,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
   const [isCurrentLocationSwitch, setIsCurrentLocationSwitch] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
 
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isLocationEnabled, setIsLocationEnabled] = useState(false);
 
   // Collapse states for each section
@@ -146,15 +145,16 @@ const FilterModal: React.FC<FilterModalProps> = ({
     useCallback(() => {
       const checkLocation = async () => {
         const isEnabled = await checkLocationPermission();
-        setIsCurrentLocationSwitch(isEnabled);
+
+        if (isCurrentLocation) {
+          setIsCurrentLocationSwitch(isEnabled);
+        }
       };
 
       if (visible) {
+        checkLocation();
+
         setTempSearchLocation(searchLocation || user?.postalCode || '');
-        if (isCurrentLocation) {
-          checkLocation();
-        }
-        // Convert keywords array to comma-separated string
         setTempKeywords(activeFilters.keywords.join(', '));
         setSelectedServiceTypes([...activeFilters.serviceType]);
         setSelectedPriceRanges([...activeFilters.priceRange]);
@@ -445,7 +445,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
               {/* Location Input */}
               {
-                isCurrentLocationSwitch ?
+                isCurrentLocationSwitch ? <View style={{ flexDirection: 'column' }}>
                   <TouchableOpacity style={styles.currentLocationSwitchButton} onPress={() => setIsCurrentLocationSwitch(false)}>
                     <Ionicons
                       name="location"
@@ -454,16 +454,24 @@ const FilterModal: React.FC<FilterModalProps> = ({
                       style={styles.locationIcon}
                     />
                     <Text style={styles.locationButtonLabel}>
-                      {isGettingLocation ? 'Getting Location...' : 'Current Location'}
+                      Current Location
                     </Text>
-                    {isGettingLocation && (
-                      <ActivityIndicator
-                        size="small"
-                        color={theme.colors.primary}
-                        style={{ marginLeft: theme.spacing.xs }}
-                      />
-                    )}
                   </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.searchLabelWrap}
+                    onPress={() => setIsCurrentLocationSwitch(false)}
+                  >
+                    <Ionicons
+                      name="navigate"
+                      size={12}
+                      color={theme.colors.background}
+                      style={styles.labelIcon}
+                    />
+                    <Text style={styles.labeltext}>Search by </Text>
+                    <Text style={styles.labeltextUnderline}>Zipcode or City</Text>
+                  </TouchableOpacity>
+                </View>
                   : <View style={{ flexDirection: 'column' }}>
                     <View style={styles.locationInputContainer}>
                       <Ionicons
@@ -481,19 +489,35 @@ const FilterModal: React.FC<FilterModalProps> = ({
                       />
                     </View>
 
-                    <TouchableOpacity
-                      style={styles.searchLabelWrap}
-                      onPress={handleSwitchIsCurrentLocation}
-                      disabled={isGettingLocation}
-                    >
-                      <Ionicons
-                        name="navigate"
-                        size={12}
-                        color={theme.colors.background}
-                        style={styles.labelIcon}
-                      />
-                      <Text style={styles.labeltext}>Current Location</Text>
-                    </TouchableOpacity>
+                    {
+                      isLocationEnabled ?
+                        <TouchableOpacity
+                          style={styles.searchLabelWrap}
+                          onPress={handleSwitchIsCurrentLocation}
+                        >
+                          <Ionicons
+                            name="navigate"
+                            size={12}
+                            color={theme.colors.background}
+                            style={styles.labelIcon}
+                          />
+                          <Text style={styles.labeltext}>Search by </Text>
+                          <Text style={styles.labeltextUnderline}>Current Location</Text>
+                        </TouchableOpacity> :
+                        <TouchableOpacity
+                          style={styles.enableLocationSharingButton}
+                          onPress={handleSwitchIsCurrentLocation}
+                        >
+                          <Ionicons
+                            name="navigate"
+                            size={12}
+                            color={theme.colors.primary}
+                            style={styles.labelIcon}
+                          />
+                          <Text style={[styles.labeltextUnderline, styles.enableLocationSharingButtonText]}>Enable location</Text>
+                          <Text style={[styles.labeltext, styles.enableLocationSharingButtonText]}>in Settings to use current location</Text>
+                        </TouchableOpacity>
+                    }
                   </View>
               }
             </View>
@@ -812,6 +836,7 @@ const createStyles = (theme: any) => {
       fontSize: 12,
       fontWeight: '600',
       color: theme.colors.primary,
+      paddingLeft: theme.spacing.xs,
     },
     locationInputContainer: {
       flexDirection: 'row',
@@ -842,6 +867,24 @@ const createStyles = (theme: any) => {
       color: theme.colors.background,
       fontSize: 12,
       textAlign: 'center',
+    },
+    labeltextUnderline: {
+      color: theme.colors.background,
+      fontSize: 12,
+      textAlign: 'center',
+      textDecorationLine: 'underline',
+      marginRight: theme.spacing.xs,
+    },
+    enableLocationSharingButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: theme.spacing.xs + 1,
+      marginTop: -2,
+      backgroundColor: theme.colors.inputBackground + '85',
+    },
+    enableLocationSharingButtonText: {
+      color: theme.colors.primary,
     },
     refineTitle: {
       color: theme.colors.background,
