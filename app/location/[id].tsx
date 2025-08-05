@@ -228,9 +228,9 @@ export default function LocationDetail() {
       // Create deep link URL
       let deepLinkUrl = '';
       if (selectedSpecial) {
-        deepLinkUrl = `lofyd://location/${location.id}/special/${selectedSpecial.id}`;
+        deepLinkUrl = `https://lofyd.com/location/${location.id}/special/${selectedSpecial.id}`;
       } else {
-        deepLinkUrl = `lofyd://location/${location.id}`;
+        deepLinkUrl = `https://lofyd.com/location/${location.id}`;
       }
 
       const shareContent = {
