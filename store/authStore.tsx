@@ -231,6 +231,11 @@ const useAuthStore = create<AuthState>((set, get) => ({
 		}
 	},
 
+	// Tap to login method
+	tapToLogin: () => {
+		set({ isJustLoggedOut: false });
+	},
+
 	// Forgot password method
 	forgotPassword: async (email: string): Promise<void> => {
 		try {

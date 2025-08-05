@@ -20,6 +20,7 @@ import LoginForm from '../../components/auth/LoginForm';
 import BiometricLoginPrompt from '../../components/auth/BiometricLoginPrompt';
 import useAuthStore from '../../store/authStore';
 import { biometricService } from '../../services/biometric';
+import BiometricTapToLogin from '@/components/auth/BiometricTapToLogin';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function LoginScreen() {
       const isBiometricEnabled = await biometricService.isBiometricEnabled();
       const capabilities = await biometricService.checkCapabilities();
 
-      if (isBiometricEnabled && capabilities.isAvailable && capabilities.isEnrolled && !isJustLoggedOut) {
+      if (isBiometricEnabled && capabilities.isAvailable && capabilities.isEnrolled) {
         setShowBiometric(true);
       } else {
         setShowPasswordLogin(true);
@@ -97,6 +98,8 @@ export default function LoginScreen() {
 
   // Show biometric prompt if available
   if (showBiometric) {
+    if (isJustLoggedOut) return <BiometricTapToLogin />
+
     return (
       <SafeAreaView style={styles.container}>
         <BiometricLoginPrompt

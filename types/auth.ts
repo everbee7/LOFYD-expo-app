@@ -142,6 +142,7 @@ export interface AuthState {
   signup: (signupData: SignUpRequest) => Promise<void>;
   confirmSignup: (email: string, confirmCode: string) => Promise<void>;
   logout: () => Promise<void>;
+  tapToLogin: () => void;
   
   // Password reset methods
   forgotPassword: (email: string) => Promise<void>;
