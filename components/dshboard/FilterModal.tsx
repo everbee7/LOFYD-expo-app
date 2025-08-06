@@ -130,9 +130,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
   // Check location permission status when modal opens
   const checkLocationPermission = async () => {
     try {
-      const status = await locationService.getStoredPermissionStatus();
-      setIsLocationEnabled(status === 'granted');
-      return status === 'granted';
+      const status = await locationService.checkLocationPermission();
+      setIsLocationEnabled(status);
+      return status;
     } catch (error) {
       console.error('Error checking location permission:', error);
       setIsLocationEnabled(false);
@@ -145,9 +145,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
     useCallback(() => {
       const checkLocation = async () => {
         const isEnabled = await checkLocationPermission();
-
-        if (isCurrentLocation) {
-          setIsCurrentLocationSwitch(isEnabled);
+        console.log("isEnabled", isEnabled);
+        if (!isEnabled) {
+          if (isCurrentLocation) setIsCurrentLocation(false);
         }
       };
 

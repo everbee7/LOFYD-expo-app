@@ -11,17 +11,23 @@ import {
   TouchableOpacity
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import useAuthStore from '@/store/authStore';
 
 export default function BiometricTapToLogin() {
   const { theme } = useTheme();
-  const { tapToLogin } = useAuthStore();
+  const { makeNotJustLoggedOut, setLoginMethod } = useAuthStore();
 
   const styles = createStyles(theme);
 
-  const handleSignIn = () => {
-    tapToLogin();
+  const handleGoToSignInWithPassword = () => {
+    setLoginMethod("password");
+    makeNotJustLoggedOut();
+  }
+
+  const handleGoToSignInWithBiometric = () => {
+    setLoginMethod("biometric");
+    makeNotJustLoggedOut();
   }
 
   // Show password login form
@@ -40,17 +46,17 @@ export default function BiometricTapToLogin() {
             <Image source={require('../../assets/images/logo.png')} style={styles.logo} />
           </View>
 
-          <View style={styles.biometricIconContainer}>
-            <MaterialCommunityIcons
-              name="face-recognition"
+          <TouchableOpacity style={styles.biometricIconContainer} onPress={handleGoToSignInWithBiometric}>
+            <Ionicons
+              name="finger-print-outline"
               size={56}
               color={theme.colors.background}
             />
-          </View>
+          </TouchableOpacity>
           <Text style={styles.tapToLoginText}>Tap to Login</Text>
 
           <View style={styles.loginSection}>
-            <TouchableOpacity onPress={handleSignIn}>
+            <TouchableOpacity onPress={handleGoToSignInWithPassword}>
               <Text style={styles.loginLink}>
                 Sign In
               </Text>

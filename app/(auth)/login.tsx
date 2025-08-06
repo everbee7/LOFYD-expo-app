@@ -25,7 +25,7 @@ import BiometricTapToLogin from '@/components/auth/BiometricTapToLogin';
 export default function LoginScreen() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { login, error, clearError, isJustLoggedOut } = useAuthStore();
+  const { login, error, clearError, isJustLoggedOut, isPasswordLogin } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [showBiometric, setShowBiometric] = useState(false);
   const [showPasswordLogin, setShowPasswordLogin] = useState(false);
@@ -100,15 +100,17 @@ export default function LoginScreen() {
   if (showBiometric) {
     if (isJustLoggedOut) return <BiometricTapToLogin />
 
-    return (
-      <SafeAreaView style={styles.container}>
-        <BiometricLoginPrompt
-          onSuccess={handleBiometricSuccess}
-          onFallback={handleBiometricFallback}
-          onCancel={handleBiometricCancel}
-        />
-      </SafeAreaView>
-    );
+    if (!isPasswordLogin) {
+      return (
+        <SafeAreaView style={styles.container}>
+          <BiometricLoginPrompt
+            onSuccess={handleBiometricSuccess}
+            onFallback={handleBiometricFallback}
+            onCancel={handleBiometricCancel}
+          />
+        </SafeAreaView>
+      );
+    }
   }
 
   // Show password login form

@@ -73,14 +73,14 @@ export default function ProfileScreen() {
       value: false,
       icon: 'finger-print-outline'
     },
-    {
-      id: 'location',
-      title: 'Location Services',
-      subtitle: 'Allow location access for better restaurant recommendations',
-      type: 'toggle',
-      value: false,
-      icon: 'location-outline'
-    }
+    // {
+    //   id: 'location',
+    //   title: 'Location Services',
+    //   subtitle: 'Allow location access for better restaurant recommendations',
+    //   type: 'toggle',
+    //   value: false,
+    //   icon: 'location-outline'
+    // }
   ]);
 
   useEffect(() => {

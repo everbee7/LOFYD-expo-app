@@ -13,6 +13,7 @@ const BIOMETRIC_ALARM_AT_FIRST_KEY = 'BIOMETRIC_ALARM_AT_FIRST_KEY';
 const useAuthStore = create<AuthState>((set, get) => ({
 	user: null,
 	isJustLoggedOut: false,
+	isPasswordLogin: false,
 	isLoading: true,
 	error: null,
 
@@ -232,8 +233,12 @@ const useAuthStore = create<AuthState>((set, get) => ({
 	},
 
 	// Tap to login method
-	tapToLogin: () => {
+	makeNotJustLoggedOut: () => {
 		set({ isJustLoggedOut: false });
+	},
+
+	setLoginMethod: (_method: string) => {
+		set({ isPasswordLogin: _method === "password" })
 	},
 
 	// Forgot password method

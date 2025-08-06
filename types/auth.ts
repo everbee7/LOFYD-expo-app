@@ -128,6 +128,7 @@ export interface AuthState {
   user: User | null;
   isLoading: boolean;
   isJustLoggedOut: boolean;
+  isPasswordLogin: boolean;
   error: string | null;
   
   // Core auth methods
@@ -142,7 +143,8 @@ export interface AuthState {
   signup: (signupData: SignUpRequest) => Promise<void>;
   confirmSignup: (email: string, confirmCode: string) => Promise<void>;
   logout: () => Promise<void>;
-  tapToLogin: () => void;
+  makeNotJustLoggedOut: () => void;
+  setLoginMethod: (_method: string) => void;
   
   // Password reset methods
   forgotPassword: (email: string) => Promise<void>;
