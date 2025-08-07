@@ -10,11 +10,15 @@ import Button from '../common/Button';
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => Promise<void>;
+  onSwitchToBiometric: () => void;
+  isBiometricEnabled?: boolean;
   loading?: boolean;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({
   onLogin,
+  onSwitchToBiometric,
+  isBiometricEnabled = false,
   loading = false
 }) => {
   const { theme } = useTheme();
@@ -103,6 +107,22 @@ const LoginForm: React.FC<LoginFormProps> = ({
           style={styles.loginButton}
         />
 
+        {
+          isBiometricEnabled &&
+          <View style={styles.tapToLoginSection}>
+            <TouchableOpacity style={styles.tapToLoginButton} onPress={onSwitchToBiometric}>
+              <View style={styles.biometricIcon}>
+                <Ionicons
+                  name="finger-print-outline"
+                  size={20}
+                  color={theme.colors.background}
+                />
+              </View>
+              <Text style={styles.tapToLoginText}>Tap to login</Text>
+            </TouchableOpacity>
+          </View>
+        }
+
         {/* Sign Up Link */}
         <View style={styles.signUpSection}>
           <Text style={styles.signUpText}>Create an account! </Text>
@@ -142,13 +162,33 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   loginButton: {
     marginTop: theme.spacing.md,
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.xxl,
+  },
+  tapToLoginSection: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing.xxl,
+  },
+  tapToLoginButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  biometricIcon: {
+    padding: theme.spacing.xs * 1.75,
+    borderRadius: 1000,
+    backgroundColor: theme.colors.primary,
+  },
+  tapToLoginText: {
+    fontWeight: '600',
+    color: theme.colors.primary,
   },
   signUpSection: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
   },
   signUpText: {
     ...theme.typography.body,
@@ -162,7 +202,6 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   forgotPasswordSection: {
     alignItems: 'center',
-    marginTop: theme.spacing.sm,
   },
   forgotPasswordLink: {
     ...theme.typography.body,

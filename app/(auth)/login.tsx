@@ -25,9 +25,10 @@ import BiometricTapToLogin from '@/components/auth/BiometricTapToLogin';
 export default function LoginScreen() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { login, error, clearError, isJustLoggedOut, isPasswordLogin } = useAuthStore();
+  const { login, error, clearError, isJustLoggedOut, isPasswordLogin, setLoginMethod } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [showBiometric, setShowBiometric] = useState(false);
+  const [isBiometricLoginEnabled, setIsBiometricLoginEnabled] = useState(false);
   const [showPasswordLogin, setShowPasswordLogin] = useState(false);
 
   const styles = createStyles(theme);
@@ -47,6 +48,7 @@ export default function LoginScreen() {
       const capabilities = await biometricService.checkCapabilities();
 
       if (isBiometricEnabled && capabilities.isAvailable && capabilities.isEnrolled) {
+        setIsBiometricLoginEnabled(true);
         setShowBiometric(true);
       } else {
         setShowPasswordLogin(true);
@@ -96,6 +98,11 @@ export default function LoginScreen() {
     setShowPasswordLogin(true);
   };
 
+  const handleSwitchToBiometric = () => {
+    setLoginMethod("biometric")
+    setShowBiometric(true);
+  }
+
   // Show biometric prompt if available
   if (showBiometric) {
     if (isJustLoggedOut) return <BiometricTapToLogin />
@@ -130,7 +137,7 @@ export default function LoginScreen() {
           </View>
 
           {/* Form Section */}
-          <LoginForm onLogin={handlePasswordLogin} loading={loading} />
+          <LoginForm onLogin={handlePasswordLogin} loading={loading} onSwitchToBiometric={handleSwitchToBiometric} isBiometricEnabled={isBiometricLoginEnabled} />
         </ScrollView>
 
         <Text style={styles.footerText}>
