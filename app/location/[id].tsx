@@ -224,13 +224,13 @@ export default function LocationDetail() {
       if (!location) return;
 
       const fullAddress = `${location.street}, ${location.city}, ${location.state} ${location.postalCode}`;
-      
+      const environment = (process.env.EXPO_PUBLIC_ENVIRONMENT || '').toLowerCase();
       // Create deep link URL
       let deepLinkUrl = '';
       if (selectedSpecial) {
-        deepLinkUrl = `https://lofyd.com/location/${location.id}/special/${selectedSpecial.id}`;
+        deepLinkUrl = `https://${environment}.lofyd.com/location/${location.id}/special/${selectedSpecial.id}`;
       } else {
-        deepLinkUrl = `https://lofyd.com/location/${location.id}`;
+        deepLinkUrl = `https://${environment}.lofyd.com/location/${location.id}`;
       }
 
       const shareContent = {

@@ -4,6 +4,8 @@ export default {
   expo: {
     name: "LOFYD",
     slug: "lofyd",
+    scheme: "lofyd",
+    platforms: ["ios", "android"],
     version: "1.0.0",
     runtimeVersion: "1.0.0",
     orientation: "portrait",
@@ -14,6 +16,10 @@ export default {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.lofyd.app",
+      associatedDomains: [
+        "applinks:dev.lofyd.com",
+        "applinks:test.lofyd.com"
+      ],
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
         NSAppTransportSecurity: {
@@ -34,13 +40,24 @@ export default {
           "data": [
             {
               "scheme": "https",
-              "host": "lofyd.onrender.com",
-              "pathPrefix": ""
+              "host": "dev.lofyd.com",
+              "pathPrefix": "/location"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]
-        }
+        },
+        {
+        action: "VIEW",
+        autoVerify: true,
+        data: {
+          scheme: "https",
+          host: "test.lofyd.com",
+          pathPrefix: "/location"
+        },
+        category: ["BROWSABLE", "DEFAULT"]
+      }
       ],
+      plugins: ["expo-build-properties"],
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#ffffff"
