@@ -52,8 +52,9 @@ export default function BiometricTapToLogin() {
               size={56}
               color={theme.colors.background}
             />
+            <Text style={styles.tapToLoginText}>Tap to Login</Text>
           </TouchableOpacity>
-          <Text style={styles.tapToLoginText}>Tap to Login</Text>
+          
 
           <View style={styles.loginSection}>
             <TouchableOpacity onPress={handleGoToSignInWithPassword}>
