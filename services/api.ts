@@ -196,6 +196,7 @@ export const apiRequest = async <T>(
     data?: any
 ): Promise<T> => {
     try {
+        console.log(`======================== API Request Data ========================\n`, data);
         const response = await apiClient({
             url: endpoint,
             method,
@@ -205,6 +206,7 @@ export const apiRequest = async <T>(
             },
         });
 
+        console.log(`======================== API Response ========================\n`, response.data, '\n================================================================================================\n\n');
         return response.data;
     } catch (error) {
         if (axios.isAxiosError(error)) {
