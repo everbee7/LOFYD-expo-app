@@ -3,7 +3,7 @@ export interface Coordinates {
   Longitude: number;
 }
 
-export type LocationType = 'locale' | 'postal' | 'coords';
+export type LocationType = 'locale' | 'coords';
 export type ServiceType = 'dine-in' | 'take-out' | 'delivery';
 export type SortType = 'relevance' | 'distance' | 'favorites';
 
@@ -57,7 +57,8 @@ export interface Special {
 }
 
 export interface GetSpecialsRequest {
-  location: string;
+  location?: string;
+  coords?: string;
   locationType: LocationType;
   radiusInMiles: number;
   sortBy: SortType;
@@ -79,7 +80,8 @@ export interface GetSpecialsResponse {
 }
 
 export interface GetLocationsRequest {
-  location: string;
+  location?: string;
+  coords?: string;
   locationType: LocationType;
   radiusInMiles: number;
   sortBy: SortType;

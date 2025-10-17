@@ -126,7 +126,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
   },
 
   // Set device location
-  setDeviceLocation: (location: string, locationType: 'locale' | 'postal' | 'coords') => {
+  setDeviceLocation: (location: string, locationType: 'locale' | 'coords') => {
     set({
       deviceLocation: location,
       deviceLocationType: locationType,
@@ -210,7 +210,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
           if (authState.user?.postalCode) {
             return {
               location: authState.user.postalCode,
-              locationType: 'postal' as const
+              locationType: 'locale' as const
             };
           }
         }
@@ -231,7 +231,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
       if (authState.user?.postalCode) {
         return {
           location: authState.user.postalCode,
-          locationType: 'postal' as const
+          locationType: 'locale' as const
         };
       }
     }
@@ -402,7 +402,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
   },
 
   // Set location and save to AsyncStorage
-  setLocation: (location: string, locationType: 'locale' | 'postal' | 'coords') => {
+  setLocation: (location: string, locationType: 'locale' | 'coords') => {
     set({
       searchLocation: location,
       locationType,
@@ -526,7 +526,8 @@ const useLocationStore = create<LocationState>((set, get) => ({
 
     if (activeTab === 'Specials') {
       const params: GetSpecialsRequest = {
-        location,
+        location: locationType === 'coords' ? undefined : location,
+        coords: locationType === 'coords' ? location : undefined,
         locationType,
         radiusInMiles,
         sortBy,
@@ -538,7 +539,8 @@ const useLocationStore = create<LocationState>((set, get) => ({
       await get().getSpecials(params);
     } else {
       const params: GetLocationsRequest = {
-        location,
+        location: locationType === 'coords' ? undefined : location,
+        coords: locationType === 'coords' ? location : undefined,
         locationType,
         radiusInMiles,
         sortBy,
@@ -559,7 +561,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
   // Save current filter setting
   saveCurrentFilterSetting: async (name: string) => {
     const { activeTab, radiusInMiles, isCurrentLocation, sortBy, activeFilters, filterSettingLog } = get();
-    const { location } = await get().getEffectiveLocation();
+    const { location, locationType } = await get().getEffectiveLocation();
 
     const newSetting: FilterSetting = {
       id: Date.now().toString(),

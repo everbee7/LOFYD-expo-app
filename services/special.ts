@@ -11,7 +11,11 @@ export const specialService = {
     const queryParams = new URLSearchParams();
 
     // Required parameters
-    queryParams.append('location', params.location);
+    if (params.locationType === 'coords') {
+      queryParams.append('coords', params.coords || '');
+    } else {
+      queryParams.append('location', params.location || '');
+    }
     queryParams.append('locationType', params.locationType);
     queryParams.append('radiusInMiles', params.radiusInMiles.toString());
     queryParams.append('sortBy', params.sortBy);

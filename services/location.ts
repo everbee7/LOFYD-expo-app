@@ -27,7 +27,11 @@ export const locationService = {
     const queryParams = new URLSearchParams();
 
     // Required parameters
-    queryParams.append('location', params.location);
+    if (params.locationType === 'coords') {
+      queryParams.append('coords', params.coords || '');
+    } else {
+      queryParams.append('location', params.location || '');
+    }
     queryParams.append('locationType', params.locationType);
     queryParams.append('radiusInMiles', params.radiusInMiles.toString());
     queryParams.append('sortBy', params.sortBy);
@@ -88,7 +92,7 @@ export const locationService = {
   /**
    * Enhanced method to determine location type (merged from both versions)
    */
-  determineLocationType(location: string): 'locale' | 'postal' | 'coords' {
+  determineLocationType(location: string): 'locale' | 'coords' {
     if (!location || location.trim() === '') {
       return 'locale';
     }
@@ -102,7 +106,7 @@ export const locationService = {
 
     // Check for postal code
     if (this.isValidPostalCode(trimmed)) {
-      return 'postal';
+      return 'locale';
     }
 
     return 'locale';
