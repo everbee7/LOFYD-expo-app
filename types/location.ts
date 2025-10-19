@@ -6,12 +6,15 @@ export interface Coordinates {
 export type LocationType = 'locale' | 'coords';
 export type ServiceType = 'dine-in' | 'take-out' | 'delivery';
 export type SortType = 'relevance' | 'distance' | 'favorites';
+export type HourType = {
+  open: string;
+  close: string;
+}
 
 export interface DailyHours {
   day: string;
   isClosed: boolean;
-  open: string;
-  close: string;
+  times: HourType[];
 }
 
 export interface Location {
@@ -95,6 +98,19 @@ export interface GetLocationsResponse {
   offset: number;
   limit: number;
   totalSize: number;
+}
+
+// Tag responses for filters
+export interface LocationTagResponse {
+  experience: string[];
+  cuisine: string[];
+  taste: string[];
+}
+
+export interface SpecialTagResponse {
+  experience: string[];
+  cuisine: string[];
+  taste: string[];
 }
 
 export interface FilterSetting {

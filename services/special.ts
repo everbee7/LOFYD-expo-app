@@ -2,7 +2,8 @@ import { apiRequest } from './api';
 import {
   GetSpecialsRequest,
   GetSpecialsResponse,
-  Special
+  Special,
+  SpecialTagResponse
 } from '../types/location';
 
 export const specialService = {
@@ -64,5 +65,16 @@ export const specialService = {
   // Get a specific special by ID
   async getSpecialById(id: string): Promise<Special> {
     return apiRequest<Special>(`/special/${id}`, 'GET');
+  },
+
+  // Get list of special search tags (experience, cuisine, taste)
+  async getSpecialTags(params: { location?: string; coords?: string }): Promise<SpecialTagResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.coords) {
+      queryParams.append('coords', params.coords);
+    } else if (params.location) {
+      queryParams.append('location', params.location);
+    }
+    return apiRequest<SpecialTagResponse>(`/special/tags?${queryParams.toString()}`, 'GET');
   }
 };

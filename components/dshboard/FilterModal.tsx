@@ -23,6 +23,7 @@ import ConfirmationPopup from '@/components/common/ConfirmationPopup';
 import useAuthStore from '@/store/authStore';
 import useLocationStore from '@/store/locationStore';
 import { locationService } from '@/services/location';
+import { specialService } from '@/services/special';
 import SaveFilterModal from './SaveFilterModal';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
@@ -90,6 +91,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
     activeTab,
     activeFilters,
     searchLocation,
+    searchedLocation,
     radiusInMiles,
     sortBy,
     isCurrentLocation,
@@ -111,6 +113,9 @@ const FilterModal: React.FC<FilterModalProps> = ({
   const [selectedExperiences, setSelectedExperiences] = useState<string[]>([]);
   const [selectedCuisines, setSelectedCuisines] = useState<string[]>([]);
   const [selectedTastes, setSelectedTastes] = useState<string[]>([]);
+  const [experienceOptions, setExperienceOptions] = useState<string[]>(experiences);
+  const [cuisineOptions, setCuisineOptions] = useState<string[]>(cuisines);
+  const [tasteOptions, setTasteOptions] = useState<string[]>(tastes);
   const [selectedDistance, setSelectedDistance] = useState<number>(0.5);
   const [selectedSortBy, setSelectedSortBy] = useState<string>('relevance');
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -163,8 +168,45 @@ const FilterModal: React.FC<FilterModalProps> = ({
         setSelectedTastes([...activeFilters.taste]);
         setSelectedDistance(radiusInMiles);
         setSelectedSortBy(sortBy);
+
+        // Fetch dynamic tags
+        const loadTags = async () => {
+          try {
+            let coords: string | null = null;
+            const hasPermission = await locationService.checkLocationPermission();
+            if (hasPermission) {
+              coords = await locationService.getCurrentLocationForAPI();
+            }
+
+            const params = coords
+              ? { coords }
+              : { location: searchedLocation || tempSearchLocation || user?.postalCode || '' };
+
+            let tags: { experience: string[]; cuisine: string[]; taste: string[] } | null = null;
+            if (activeTab === 'Specials') {
+              tags = await specialService.getSpecialTags(params);
+            } else {
+              tags = await locationService.getLocationTags(params);
+            }
+
+            const exp = tags?.experience && tags.experience.length > 0 ? tags.experience : experiences;
+            const cui = tags?.cuisine && tags.cuisine.length > 0 ? tags.cuisine : cuisines;
+            const tas = tags?.taste && tags.taste.length > 0 ? tags.taste : tastes;
+
+            setExperienceOptions(exp);
+            setCuisineOptions(cui);
+            setTasteOptions(tas);
+          } catch (e) {
+            // Fallback to static values on error
+            setExperienceOptions(experiences);
+            setCuisineOptions(cuisines);
+            setTasteOptions(tastes);
+          }
+        };
+
+        loadTags();
       }
-    }, [visible, activeFilters, isCurrentLocation, searchLocation, radiusInMiles, sortBy, user?.postalCode])
+    }, [visible, activeFilters, isCurrentLocation, searchLocation, searchedLocation, radiusInMiles, sortBy, activeTab, user?.postalCode])
   );
 
   // Check if there are unsaved changes
@@ -583,7 +625,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                 </TouchableOpacity>
                 {!collapsedSections.experience && (
                   <View style={styles.toggleContainer}>
-                    {experiences.map(experience =>
+                    {experienceOptions.map(experience =>
                       renderToggleButton('experience' + experience, experience, experience, selectedExperiences, setSelectedExperiences)
                     )}
                   </View>
@@ -609,7 +651,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                 </TouchableOpacity>
                 {!collapsedSections.cuisine && (
                   <View style={styles.toggleContainer}>
-                    {cuisines.map(cuisine =>
+                    {cuisineOptions.map(cuisine =>
                       renderToggleButton('cuisine' + cuisine, cuisine, cuisine, selectedCuisines, setSelectedCuisines)
                     )}
                   </View>
@@ -635,7 +677,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
                 </TouchableOpacity>
                 {!collapsedSections.taste && (
                   <View style={styles.toggleContainer}>
-                    {tastes.map(taste =>
+                    {tasteOptions.map(taste =>
                       renderToggleButton('taste' + taste, taste, taste, selectedTastes, setSelectedTastes)
                     )}
                   </View>

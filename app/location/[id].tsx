@@ -21,7 +21,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import Tabs from '@/components/common/Tabs';
 import useLocationStore from '@/store/locationStore';
 import { specialService } from '@/services/special';
-import { Location, Special } from '@/types/location';
+import { DailyHours, Location, Special } from '@/types/location';
 import { serviceTypeLabels } from '@/app/(tabs)/dashboard';
 
 export default function LocationDetail() {
@@ -81,7 +81,7 @@ export default function LocationDetail() {
   };
 
   // Utility function to check if location is currently open
-  const isLocationOpen = (locationHours: any[], timezone: string): boolean => {
+  const isLocationOpen = (locationHours: DailyHours[], timezone: string): boolean => {
     if (!locationHours || locationHours.length === 0 || !timezone) return false;
 
     try {
@@ -117,24 +117,26 @@ export default function LocationDetail() {
       if (currentTimeInMinutes < 360) { // Before 6:00 AM
         const yesterdayHours = locationHours.find(h => h.day.toLowerCase() === previousDay.toLowerCase());
         
-        if (yesterdayHours && !yesterdayHours.isClosed) {
-          // Parse yesterday's times
-          const yesterdayOpenTime = yesterdayHours.open;
-          const yesterdayCloseTime = yesterdayHours.close;
-          
-          const yesterdayOpenHour = parseInt(yesterdayOpenTime.split(':')[0]);
-          const yesterdayOpenMinute = parseInt(yesterdayOpenTime.split(':')[1]);
-          const yesterdayCloseHour = parseInt(yesterdayCloseTime.split(':')[0]);
-          const yesterdayCloseMinute = parseInt(yesterdayCloseTime.split(':')[1]);
-          
-          const yesterdayOpenTimeInMinutes = yesterdayOpenHour * 60 + yesterdayOpenMinute;
-          const yesterdayCloseTimeInMinutes = yesterdayCloseHour * 60 + yesterdayCloseMinute;
-          
-          // If yesterday's closing time is less than opening time, it means it closes in the early morning
-          if (yesterdayCloseTimeInMinutes < yesterdayOpenTimeInMinutes) {
-            // Check if current time is before yesterday's closing time
-            if (currentTimeInMinutes < yesterdayCloseTimeInMinutes) {
-              return true;
+        if (yesterdayHours && !yesterdayHours.isClosed && yesterdayHours.times && yesterdayHours.times.length > 0) {
+          // Check all time periods for yesterday
+          for (const timePeriod of yesterdayHours.times) {
+            const yesterdayOpenTime = timePeriod.open;
+            const yesterdayCloseTime = timePeriod.close;
+            
+            const yesterdayOpenHour = parseInt(yesterdayOpenTime.split(':')[0]);
+            const yesterdayOpenMinute = parseInt(yesterdayOpenTime.split(':')[1]);
+            const yesterdayCloseHour = parseInt(yesterdayCloseTime.split(':')[0]);
+            const yesterdayCloseMinute = parseInt(yesterdayCloseTime.split(':')[1]);
+            
+            const yesterdayOpenTimeInMinutes = yesterdayOpenHour * 60 + yesterdayOpenMinute;
+            const yesterdayCloseTimeInMinutes = yesterdayCloseHour * 60 + yesterdayCloseMinute;
+            
+            // If yesterday's closing time is less than opening time, it means it closes in the early morning
+            if (yesterdayCloseTimeInMinutes < yesterdayOpenTimeInMinutes) {
+              // Check if current time is before yesterday's closing time
+              if (currentTimeInMinutes < yesterdayCloseTimeInMinutes) {
+                return true;
+              }
             }
           }
         }
@@ -143,30 +145,38 @@ export default function LocationDetail() {
       // Find today's hours
       const todayHours = locationHours.find(h => h.day.toLowerCase() === currentDay.toLowerCase());
       
-      if (!todayHours || todayHours.isClosed) {
+      if (!todayHours || todayHours.isClosed || !todayHours.times || todayHours.times.length === 0) {
         return false;
       }
 
-      // Parse open and close times for today
-      const openTime = todayHours.open;
-      const closeTime = todayHours.close;
-      
-      const openHour = parseInt(openTime.split(':')[0]);
-      const openMinute = parseInt(openTime.split(':')[1]);
-      const closeHour = parseInt(closeTime.split(':')[0]);
-      const closeMinute = parseInt(closeTime.split(':')[1]);
-      
-      const openTimeInMinutes = openHour * 60 + openMinute;
-      const closeTimeInMinutes = closeHour * 60 + closeMinute;
+      // Check all time periods for today
+      for (const timePeriod of todayHours.times) {
+        const openTime = timePeriod.open;
+        const closeTime = timePeriod.close;
+        
+        const openHour = parseInt(openTime.split(':')[0]);
+        const openMinute = parseInt(openTime.split(':')[1]);
+        const closeHour = parseInt(closeTime.split(':')[0]);
+        const closeMinute = parseInt(closeTime.split(':')[1]);
+        
+        const openTimeInMinutes = openHour * 60 + openMinute;
+        const closeTimeInMinutes = closeHour * 60 + closeMinute;
 
-      // Handle overnight hours (close time is next day)
-      if (closeTimeInMinutes < openTimeInMinutes) {
-        // Open past midnight - check if current time is after opening OR before closing (next day)
-        return currentTimeInMinutes >= openTimeInMinutes || currentTimeInMinutes < closeTimeInMinutes;
+        // Handle overnight hours (close time is next day)
+        if (closeTimeInMinutes < openTimeInMinutes) {
+          // Open past midnight - check if current time is after opening OR before closing (next day)
+          if (currentTimeInMinutes >= openTimeInMinutes || currentTimeInMinutes < closeTimeInMinutes) {
+            return true;
+          }
+        } else {
+          // Normal hours - same day
+          if (currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes < closeTimeInMinutes) {
+            return true;
+          }
+        }
       }
       
-      // Normal hours - same day
-      return currentTimeInMinutes >= openTimeInMinutes && currentTimeInMinutes < closeTimeInMinutes;
+      return false;
     } catch (error) {
       console.error('Error checking if location is open:', error);
       return false;
@@ -340,16 +350,26 @@ export default function LocationDetail() {
     }
   };
 
-  const formatHours = (hours: any[]) => {
+  const formatHours = (hours: DailyHours[]) => {
     if (!hours || hours.length === 0) return [];
 
     return hours.map(dayHour => {
       if (dayHour.isClosed) {
         return `${dayHour.day}: Closed`;
       }
-      const openTime = convertTo12Hour(dayHour.open);
-      const closeTime = convertTo12Hour(dayHour.close);
-      return `${dayHour.day}: ${openTime} - ${closeTime}`;
+      
+      if (!dayHour.times || dayHour.times.length === 0) {
+        return `${dayHour.day}: Hours not available`;
+      }
+
+      // Format all time periods for the day
+      const formattedTimes = dayHour.times.map(timePeriod => {
+        const openTime = convertTo12Hour(timePeriod.open);
+        const closeTime = convertTo12Hour(timePeriod.close);
+        return `${openTime} - ${closeTime}`;
+      });
+
+      return `${dayHour.day}: ${formattedTimes.join(', ')}`;
     });
   };
 
@@ -379,12 +399,20 @@ export default function LocationDetail() {
       return { isOpen: false, todayHours: `${todayHours.day}: Closed` };
     }
 
-    const openTime = convertTo12Hour(todayHours.open);
-    const closeTime = convertTo12Hour(todayHours.close);
+    if (!todayHours.times || todayHours.times.length === 0) {
+      return { isOpen: false, todayHours: `${todayHours.day}: Hours not available` };
+    }
+
+    // Format all time periods for the day
+    const formattedTimes = todayHours.times.map(timePeriod => {
+      const openTime = convertTo12Hour(timePeriod.open);
+      const closeTime = convertTo12Hour(timePeriod.close);
+      return `${openTime} - ${closeTime}`;
+    });
 
     return {
       isOpen,
-      todayHours: `${todayHours.day}: ${openTime} - ${closeTime}`
+      todayHours: `${todayHours.day}: ${formattedTimes.join(', ')}`
     };
   };
 

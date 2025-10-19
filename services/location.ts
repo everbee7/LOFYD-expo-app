@@ -5,7 +5,8 @@ import { apiRequest } from './api';
 import {
   GetLocationsRequest,
   GetLocationsResponse,
-  Location as LocationType
+  Location as LocationType,
+  LocationTagResponse
 } from '../types/location';
 
 // Constants
@@ -57,6 +58,20 @@ export const locationService = {
    */
   async getLocationById(id: string): Promise<LocationType> {
     return apiRequest<LocationType>(`/location/${id}`, 'GET');
+  },
+
+  /**
+   * Get list of location search tags (experience, cuisine, taste)
+   */
+  async getLocationTags(params: { location?: string; coords?: string }): Promise<LocationTagResponse> {
+    const queryParams = new URLSearchParams();
+    if (params.coords) {
+      queryParams.append('location', '');
+      queryParams.append('coords', params.coords);
+    } else if (params.location) {
+      queryParams.append('location', params.location);
+    }
+    return apiRequest<LocationTagResponse>(`/location/tags?${queryParams.toString()}`, 'GET');
   },
 
   /**
