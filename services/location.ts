@@ -75,6 +75,15 @@ export const locationService = {
   },
 
   /**
+   * Get location search suggestions
+   */
+  async searchLocationSuggestions(location: string): Promise<{ locations: string[] }> {
+    const queryParams = new URLSearchParams();
+    queryParams.append('location', location);
+    return apiRequest<{ locations: string[] }>(`/location/search?${queryParams.toString()}`, 'GET');
+  },
+
+  /**
    * Helper method to build location string from coordinates
    */
   buildCoordsLocation(latitude: number, longitude: number): string {

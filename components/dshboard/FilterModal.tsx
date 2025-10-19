@@ -28,6 +28,24 @@ import SaveFilterModal from './SaveFilterModal';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDebounce } from '@/hooks/useDebounce';
+
+// Custom hook for debouncing values
+const useDebouncedValue = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
 
 // Use the same key as AuthStore and ProfileScreen
 const LOCATION_PERMISSION_KEY = 'userLocationPermissionStatus';
@@ -124,6 +142,12 @@ const FilterModal: React.FC<FilterModalProps> = ({
 
   const [isLocationEnabled, setIsLocationEnabled] = useState(false);
 
+  // Location suggestions state
+  const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [isProgrammaticChange, setIsProgrammaticChange] = useState(true);
+
   // Collapse states for each section
   const [collapsedSections, setCollapsedSections] = useState({
     price: true,
@@ -173,6 +197,8 @@ const FilterModal: React.FC<FilterModalProps> = ({
         const loadTags = async () => {
           try {
             let coords: string | null = null;
+
+            // try with current location if permission is granted
             const hasPermission = await locationService.checkLocationPermission();
             if (hasPermission) {
               coords = await locationService.getCurrentLocationForAPI();
@@ -286,6 +312,67 @@ const FilterModal: React.FC<FilterModalProps> = ({
       }
     }
   };
+
+  // Debounced location search value
+  const debouncedLocationSearch = useDebouncedValue(tempSearchLocation, 500);
+
+  // Search location suggestions
+  const searchLocationSuggestions = async (searchTerm: string) => {
+    if (!searchTerm || searchTerm.length < 3 || isProgrammaticChange) {
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
+      return;
+    }
+
+    console.log('searchLocationSuggestions', searchTerm, isProgrammaticChange);
+
+    setIsLoadingSuggestions(true);
+    try {
+      const response = await locationService.searchLocationSuggestions(searchTerm);
+      setLocationSuggestions(response.locations);
+      setShowLocationSuggestions(response.locations.length > 0);
+    } catch (error) {
+      console.error('Error fetching location suggestions:', error);
+      setLocationSuggestions([]);
+      setShowLocationSuggestions(false);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  };
+
+  // Handle location suggestion selection
+  const handleLocationSuggestionSelect = (selectedLocation: string) => {
+    setIsProgrammaticChange(true);
+    console.log('handleLocationSuggestionSelect', selectedLocation)
+    setTempSearchLocation(selectedLocation);
+    setShowLocationSuggestions(false);
+    setLocationSuggestions([]);
+  };
+
+  // Handle location input change
+  const handleLocationInputChange = (text: string) => {
+    setTempSearchLocation(text);
+    if (!isProgrammaticChange) {
+      setShowLocationSuggestions(false);
+      setLocationSuggestions([]);
+    }
+    setIsProgrammaticChange(false);
+  };
+
+  // Effect for debounced location search
+  useEffect(() => {
+    if (!isProgrammaticChange && debouncedLocationSearch) {
+      searchLocationSuggestions(debouncedLocationSearch);
+    }
+  }, [debouncedLocationSearch, isProgrammaticChange]);
+
+  // Cleanup effect to hide suggestions when modal closes or switches to current location
+  useEffect(() => {
+    if (!visible || isCurrentLocationSwitch) {
+      setShowLocationSuggestions(false);
+      setLocationSuggestions([]);
+    }
+  }, [visible, isCurrentLocationSwitch]);
 
   // Parse keywords from comma-separated string
   const parseKeywords = (keywordString: string): string[] => {
@@ -466,7 +553,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
             </View>
           </View>
 
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            style={styles.content} 
+            showsVerticalScrollIndicator={false}
+          >
             {/* Keywords Input */}
             <View style={styles.searchSection}>
               <View style={styles.keywordBoxContainer}>
@@ -527,9 +617,37 @@ const FilterModal: React.FC<FilterModalProps> = ({
                         placeholder={"Location"}
                         placeholderTextColor={theme.colors.textLight}
                         value={tempSearchLocation}
-                        onChangeText={setTempSearchLocation}
+                        onChangeText={handleLocationInputChange}
                       />
                     </View>
+
+                    {/* Location Suggestions Dropdown */}
+                    {showLocationSuggestions && (
+                      <View style={styles.locationSuggestionsContainer}>
+                        {isLoadingSuggestions ? (
+                          <View style={styles.suggestionItem}>
+                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                            <Text style={styles.suggestionText}>Searching...</Text>
+                          </View>
+                        ) : (
+                          locationSuggestions.map((suggestion, index) => (
+                            <TouchableOpacity
+                              key={index}
+                              style={styles.suggestionItem}
+                              onPress={() => handleLocationSuggestionSelect(suggestion)}
+                            >
+                              <Ionicons
+                                name="location-outline"
+                                size={16}
+                                color={theme.colors.textLight}
+                                style={styles.suggestionIcon}
+                              />
+                              <Text style={styles.suggestionText}>{suggestion}</Text>
+                            </TouchableOpacity>
+                          ))
+                        )}
+                      </View>
+                    )}
 
                     {
                       isLocationEnabled ?
@@ -887,6 +1005,7 @@ const createStyles = (theme: any) => {
       paddingHorizontal: theme.spacing.sm,
       marginBottom: theme.spacing.sm,
       height: 36,
+      position: 'relative',
     },
     locationIcon: {
       marginRight: theme.spacing.xs,
@@ -999,6 +1118,42 @@ const createStyles = (theme: any) => {
       color: theme.colors.background || '#ffffff',
       fontSize: 14,
       textDecorationLine: 'underline',
+    },
+    locationSuggestionsContainer: {
+      position: 'absolute',
+      top: 36, // Position below the location input
+      left: 0,
+      right: 0,
+      backgroundColor: theme.colors.background,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderTopWidth: 0,
+      maxHeight: 200,
+      zIndex: 1000,
+      elevation: 5,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+    },
+    suggestionItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: theme.spacing.sm,
+      paddingVertical: theme.spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    suggestionIcon: {
+      marginRight: theme.spacing.sm,
+    },
+    suggestionText: {
+      fontSize: 12,
+      color: theme.colors.text,
+      flex: 1,
     },
   });
 };
