@@ -15,6 +15,7 @@ export const specialService = {
     if (params.locationType === 'coords') {
       queryParams.append('coords', params.coords || '');
     } else {
+      queryParams.append('coords', params.coords || '');
       queryParams.append('location', params.location || '');
     }
     queryParams.append('locationType', params.locationType);
