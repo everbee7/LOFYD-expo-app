@@ -65,6 +65,12 @@ export const locationService = {
    * Get list of location search tags (experience, cuisine, taste)
    */
   async getLocationTags(params: { location?: string; coords?: string }): Promise<LocationTagResponse> {
+    // Try cache first (24h TTL)
+    const key = this._makeTagCacheKey('location', params);
+    const cached = await this._getTagCache<LocationTagResponse>('location', key);
+    console.log('getLocationTags cached', cached);
+    if (cached) return cached;
+
     const queryParams = new URLSearchParams();
     if (params.coords) {
       queryParams.append('location', '');
@@ -72,7 +78,10 @@ export const locationService = {
     } else if (params.location) {
       queryParams.append('location', params.location);
     }
-    return apiRequest<LocationTagResponse>(`/location/tags?${queryParams.toString()}`, 'GET');
+    const data = await apiRequest<LocationTagResponse>(`/location/tags?${queryParams.toString()}`, 'GET');
+    console.log('getLocationTags data', data);
+    await this._setTagCache('location', key, data);
+    return data;
   },
 
   /**
@@ -367,5 +376,61 @@ export const locationService = {
       return 'coords';
     }
     return providedLocation ? this.determineLocationType(providedLocation) : 'locale';
+  },
+
+  // ==================== TAG CACHE (Private) ====================
+  _tagTTLMs: 24 * 60 * 60 * 1000,
+  _tagIndexKey: 'cache:index:locationTags',
+
+  async clearTagCaches(): Promise<void> {
+    try {
+      const indexRaw = await AsyncStorage.getItem(this._tagIndexKey);
+      if (indexRaw) {
+        const keys: string[] = JSON.parse(indexRaw);
+        if (Array.isArray(keys) && keys.length > 0) {
+          await AsyncStorage.multiRemove(keys);
+        }
+      }
+      await AsyncStorage.removeItem(this._tagIndexKey);
+    } catch (e) {
+      console.warn('Failed clearing location tag cache', e);
+    }
+  },
+
+  _makeTagCacheKey(prefix: 'location', params: { location?: string; coords?: string }): string {
+    const scope = params.coords
+      ? `coords:${(params.coords || '').trim().toLowerCase()}`
+      : `locale:${(params.location || '').trim().toLowerCase()}`;
+    return `cache:${prefix}Tags:${scope}`;
+  },
+
+  async _getTagCache<T>(prefix: 'location', key: string): Promise<T | null> {
+    try {
+      const raw = await AsyncStorage.getItem(key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { timestamp: number; data: T };
+      if (!parsed || typeof parsed.timestamp !== 'number') return null;
+      const isFresh = Date.now() - parsed.timestamp < this._tagTTLMs;
+      return isFresh ? parsed.data : null;
+    } catch {
+      return null;
+    }
+  },
+
+  async _setTagCache<T>(prefix: 'location', key: string, data: T): Promise<void> {
+    try {
+      const payload = JSON.stringify({ timestamp: Date.now(), data });
+      await AsyncStorage.setItem(key, payload);
+      // update index
+      const indexRaw = await AsyncStorage.getItem(this._tagIndexKey);
+      const keys: string[] = indexRaw ? JSON.parse(indexRaw) : [];
+      if (!keys.includes(key)) {
+        keys.push(key);
+        await AsyncStorage.setItem(this._tagIndexKey, JSON.stringify(keys));
+      }
+    } catch (e) {
+      // non-fatal
+      console.warn('Failed writing location tag cache', e);
+    }
   }
 };

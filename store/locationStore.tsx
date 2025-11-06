@@ -409,6 +409,11 @@ const useLocationStore = create<LocationState>((set, get) => ({
       pagination: { ...get().pagination, offset: 0 } // Reset pagination
     });
     AsyncStorage.setItem('userLocation', location);
+    // Invalidate tag caches when user changes typed location
+    try {
+      locationService.clearTagCaches();
+      specialService.clearTagCaches();
+    } catch {}
   },
 
   // Set location switch
@@ -418,6 +423,11 @@ const useLocationStore = create<LocationState>((set, get) => ({
       pagination: { ...get().pagination, offset: 0 } // Reset pagination
     });
     AsyncStorage.setItem('userIsCurrentLocation', isTrue ? "true" : "false");
+    // Invalidate tag caches when user toggles current location usage
+    try {
+      locationService.clearTagCaches();
+      specialService.clearTagCaches();
+    } catch {}
   },
 
   // Set search radius
