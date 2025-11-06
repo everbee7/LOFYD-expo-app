@@ -8,7 +8,7 @@ interface LocationItemProps {
     id: string;
     name: string;
     description: string;
-    distance: string;
+    distance?: string;
     address: string;
     cuisine: string[];
     amenities: string[];
@@ -50,7 +50,9 @@ export default function LocationItem({ location, onPress, isSpecial = false}: Lo
           <Text style={styles.locationDescription} numberOfLines={2} ellipsizeMode="tail">
             {location.description}
           </Text>
-          <Text style={styles.locationDistance}>{location.distance}</Text>
+          {Boolean(location.distance) && (
+            <Text style={styles.locationDistance}>{location.distance}</Text>
+          )}
         </View>
         <Image source={location.image ? { uri: location.image } : require('../assets/images/default-location-rec.jpg')} style={styles.locationImage} />
       </View>
