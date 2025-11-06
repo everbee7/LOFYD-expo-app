@@ -273,9 +273,9 @@ export default function LocationDetail() {
       let mapUrl = '';
 
       // Check if we have coordinates and they're not zero
-      if (coordinates && coordinates.Latitude !== 0 && coordinates.Longitude !== 0) {
+      if (coordinates && coordinates.latitude != null && coordinates.longitude != null) {
         // Use coordinates for more accurate directions
-        const { Latitude: lat, Longitude: lng } = coordinates;
+        const { latitude: lat, longitude: lng } = coordinates;
 
         if (Platform.OS === 'ios') {
           // iOS - Try Apple Maps first, fallback to Google Maps
@@ -314,8 +314,8 @@ export default function LocationDetail() {
         await Linking.openURL(mapUrl);
       } else {
         // Final fallback - open in browser
-        const browserUrl = coordinates && coordinates.Latitude !== 0 && coordinates.Longitude !== 0
-          ? `https://www.google.com/maps/dir/?api=1&destination=${coordinates.Latitude},${coordinates.Longitude}`
+        const browserUrl = coordinates && coordinates.latitude !== 0 && coordinates.longitude !== 0
+          ? `https://www.google.com/maps/dir/?api=1&destination=${coordinates.latitude},${coordinates.longitude}`
           : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
 
         await Linking.openURL(browserUrl);

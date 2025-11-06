@@ -1,6 +1,6 @@
 export interface Coordinates {
-  Latitude: number;
-  Longitude: number;
+  latitude: number;
+  longitude: number;
 }
 
 export type LocationType = 'locale' | 'coords';
