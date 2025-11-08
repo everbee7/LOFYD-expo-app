@@ -205,25 +205,62 @@ export const locationService = {
    */
   async getCurrentLocation(): Promise<DeviceLocationData | null> {
     try {
-      const hasPermission = await this.checkLocationPermission();
-
-      if (!hasPermission) {
-        console.warn('Location permission not granted');
+      // First check if location services are enabled on the device
+      const servicesEnabled = await this.isLocationServicesEnabled();
+      if (!servicesEnabled) {
+        console.error('[getCurrentLocation] Location services are disabled on the device. Please enable location services (GPS) in your device settings.');
         return null;
       }
 
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-        timeInterval: 10000,
-        distanceInterval: 10,
-      });
+      // Check if permission is granted
+      const hasPermission = await this.checkLocationPermission();
+      if (!hasPermission) {
+        console.error('[getCurrentLocation] Location permission not granted. Please grant location permission in app settings.');
+        return null;
+      }
+
+      // Get current position with timeout to prevent hanging
+      const location = await Promise.race([
+        Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+          timeInterval: 10000,
+          distanceInterval: 10,
+        }),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Location request timed out after 15 seconds')), 15000)
+        ),
+      ]);
+
+      if (!location || !location.coords) {
+        console.error('[getCurrentLocation] Invalid location data received');
+        return null;
+      }
 
       return {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
       };
-    } catch (error) {
-      console.error('Error getting current location:', error);
+    } catch (error: any) {
+      // Provide detailed error logging
+      const errorMessage = error?.message || 'Unknown error';
+      console.error('[getCurrentLocation] Error getting current location:', {
+        message: errorMessage,
+        code: error?.code,
+        error,
+      });
+
+      // Check for common error scenarios
+      if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+        console.error('[getCurrentLocation] Location request timed out. This usually means:');
+        console.error('  - GPS cannot get a fix (try going outside or near a window)');
+        console.error('  - Location services are disabled');
+        console.error('  - Device is in airplane mode');
+      } else if (errorMessage.includes('permission') || error?.code === 'E_LOCATION_PERMISSION_DENIED') {
+        console.error('[getCurrentLocation] Location permission issue. Please check app permissions in device settings.');
+      } else if (errorMessage.includes('services') || error?.code === 'E_LOCATION_SERVICES_DISABLED') {
+        console.error('[getCurrentLocation] Location services are disabled. Please enable GPS/location services in device settings.');
+      }
+
       return null;
     }
   },

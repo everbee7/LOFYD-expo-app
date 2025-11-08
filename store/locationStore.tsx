@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as DeviceLocation from 'expo-location';
 import { locationService } from '../services/location';
 import { specialService } from '../services/special';
 import { LocationState, Special, Location, GetSpecialsRequest, GetLocationsRequest, FilterSetting } from '../types/location';
@@ -152,67 +151,41 @@ const useLocationStore = create<LocationState>((set, get) => ({
     // Current location
     if (isCurrentLocation) {
       try {
-        // Get current position
-        const location = await DeviceLocation.getCurrentPositionAsync({
-          accuracy: DeviceLocation.Accuracy.Balanced,
-          timeInterval: 10000,
-          distanceInterval: 100,
-        });
+        // Get current location using locationService
+        const locationData = await locationService.getCurrentLocation();
 
-        const { latitude, longitude } = location.coords;
-        const coordinatesString = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+        if (locationData) {
+          const { latitude, longitude } = locationData;
+          const coordinatesString = locationService.buildCoordsLocation(latitude, longitude);
 
-        // Reverse geocode to get locale format
-        try {
-          const geocodedLocation = await DeviceLocation.reverseGeocodeAsync({
-            latitude,
-            longitude,
-          });
+          // Save device location as coords
+          get().setDeviceLocation(coordinatesString, 'coords');
 
-          if (geocodedLocation && geocodedLocation.length > 0) {
-            const address = geocodedLocation[0];
-            // Format as "City, State" or similar locale format
-            const localeString = `${address.city || address.subregion || ''}, ${address.region || address.country || ''}`.replace(/^,\s*|,\s*$/g, '');
-
-            // Save device location as locale
-            get().setDeviceLocation(localeString, 'locale');
-
-            return {
-              location: localeString,
-              locationType: 'locale' as const
-            };
-          }
-        } catch (geocodeError) {
-          console.warn('Failed to reverse geocode location:', geocodeError);
-        }
-
-        // Fallback to coordinates if reverse geocoding fails
-        get().setDeviceLocation(coordinatesString, 'coords');
-        return {
-          location: coordinatesString,
-          locationType: 'coords' as const
-        };
-
-      } catch (locationError) {
-        console.warn('Failed to get current location:', locationError);
-
-        // Fallback to previously saved device location if available
-        if (deviceLocation && deviceLocation.trim()) {
           return {
-            location: deviceLocation,
-            locationType: get().deviceLocationType
+            location: coordinatesString,
+            locationType: 'coords' as const
           };
         }
+      } catch (locationError) {
+        console.warn('Failed to get current location:', locationError);
+      }
 
-        // Fallback to user's postal code from auth store
-        if (authStore) {
-          const authState = authStore.getState();
-          if (authState.user?.postalCode) {
-            return {
-              location: authState.user.postalCode,
-              locationType: 'locale' as const
-            };
-          }
+      // Fallback to previously saved device location if available
+      if (deviceLocation && deviceLocation.trim()) {
+        return {
+          location: deviceLocation,
+          locationType: get().deviceLocationType
+        };
+      }
+
+      // Fallback to user's postal code from auth store
+      if (authStore) {
+        const authState = authStore.getState();
+        if (authState.user?.postalCode) {
+          return {
+            location: authState.user.postalCode,
+            locationType: 'locale' as const
+          };
         }
       }
     }
