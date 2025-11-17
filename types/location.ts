@@ -91,6 +91,11 @@ export interface GetLocationsRequest {
   serviceType?: ServiceType[];
   offset?: number;
   limit?: number;
+  keywords?: string[];
+  priceRange?: number[];
+  experience?: string[];
+  cuisine?: string[];
+  taste?: string[];
 }
 
 export interface GetLocationsResponse {
@@ -176,6 +181,12 @@ export interface LocationState {
     totalSize: number;
   };
 
+  // Debug info
+  lastRequestUrls: {
+    specials: string | null;
+    locations: string | null;
+  };
+
   // Core methods
   initialize: () => Promise<void>;
   getSpecials: (params: GetSpecialsRequest) => Promise<GetSpecialsResponse>;
@@ -204,6 +215,9 @@ export interface LocationState {
 
   // Helper method to get effective location
   getEffectiveLocation: () => Promise<{ location: string; locationType: LocationType }>;
+
+  // Reset search state
+  resetSearchState: () => Promise<void>;
 
   // New methods for filter settings
   saveCurrentFilterSetting: (name: string) => void;

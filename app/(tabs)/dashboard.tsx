@@ -53,6 +53,7 @@ export default function DashboardScreen() {
     activeTab,
     pagination,
     filterSettingLog,
+    lastRequestUrls,
     initialize,
     searchWithCurrentParams,
     loadMore,
@@ -403,6 +404,24 @@ export default function DashboardScreen() {
             {resultsText}
           </Text>
         </View>
+
+      {(() => {
+        const activeRequestUrl = activeTab === 'Specials'
+          ? lastRequestUrls.specials
+          : lastRequestUrls.locations;
+        const label = activeTab === 'Specials' ? 'Specials' : 'Locations';
+
+        if (!activeRequestUrl) return null;
+
+        return (
+        <View style={styles.debugInfoContainer}>
+          <Text style={styles.debugLabel}>Debug Requests</Text>
+          <Text style={styles.debugText}>
+            {label}: {activeRequestUrl}
+          </Text>
+        </View>
+        );
+      })()}
       </View>
 
       {/* Error Display */}
@@ -573,6 +592,14 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
   },
+  debugInfoContainer: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    gap: 2,
+  },
   locationHead: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -589,6 +616,15 @@ const createStyles = (theme: any) => StyleSheet.create({
     color: theme.colors.textLight,
     marginTop: 2,
     marginLeft: 20,
+  },
+  debugLabel: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    fontWeight: '600',
+  },
+  debugText: {
+    fontSize: 12,
+    color: theme.colors.textLight,
   },
   errorContainer: {
     backgroundColor: theme.colors.error || '#ff6b6b',

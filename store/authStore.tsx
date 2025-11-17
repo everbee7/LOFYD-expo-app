@@ -8,6 +8,15 @@ import { BIOMETRIC_USER_ID, BIOMETRIC_USER_REFRESH_TOKEN_KEY, BIOMETRIC_USER_TOK
 import { AuthState, User, SignUpRequest, UserProfileRequest } from '../types/auth';
 import { locationService } from '@/services/location';
 
+const resetLocationSearchStateOnLogin = async () => {
+	try {
+		const locationStore = require('./locationStore').default;
+		await locationStore.getState().resetSearchState();
+	} catch (error) {
+		console.warn('Failed to reset location search state on login:', error);
+	}
+};
+
 const BIOMETRIC_ALARM_AT_FIRST_KEY = 'BIOMETRIC_ALARM_AT_FIRST_KEY';
 
 const useAuthStore = create<AuthState>((set, get) => ({
@@ -116,6 +125,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
 			}
 
 			set({ user: user, error: null });
+			await resetLocationSearchStateOnLogin();
 
 			return user;
 		} catch (error: any) {
@@ -136,6 +146,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
 			if (user) {
 				set({ user, isLoading: false });
+				await resetLocationSearchStateOnLogin();
 				return user;
 			}
 

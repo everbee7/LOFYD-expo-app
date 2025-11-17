@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ActivityIndicator,
   View,
@@ -73,17 +73,17 @@ export const priceRanges = [
 
 export const experiences = [
   'Live Music', 'Romance', 'Karaoke', 'Dance Floor',
-  'Games', 'Outdoor Seating'
+  'Games', 'Outdoor Seating', 'Exclusive'
 ];
 
 export const cuisines = [
   'American', 'Mexican', 'Italian', 'Greek', 'Chinese', 'Japanese', 'Indian',
-  'Mediterranean', 'South American', 'Texas Mex'
+  'Mediterranean', 'South American', 'Texas Mex', 'Exclusive', 'Pakistani'
 ];
 
 export const tastes = [
   'BBQ', 'Tacos', 'Soul Food', 'Sushi', 'Bagel', 'Sandwich', 'Pizza', 'Thai', 'Hamburger',
-  'Steak', 'Salmon', 'Seafood', 'Pasta', 'Beer', 'Wine', 'Margarita'
+  'Steak', 'Salmon', 'Seafood', 'Pasta', 'Beer', 'Wine', 'Margarita', 'Exclusive'
 ];
 
 export const distances = [0.5, 2, 10, 15, 20, 25];
@@ -125,6 +125,11 @@ const FilterModal: React.FC<FilterModalProps> = ({
   const { user } = useAuthStore();
 
   const [tempSearchLocation, setTempSearchLocation] = useState(user?.postalCode || '');
+  const tempSearchLocationRef = useRef(tempSearchLocation);
+
+  useEffect(() => {
+    tempSearchLocationRef.current = tempSearchLocation;
+  }, [tempSearchLocation]);
   const [tempKeywords, setTempKeywords] = useState('');
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>([]);
   const [selectedPriceRanges, setSelectedPriceRanges] = useState<number[]>([]);
@@ -169,6 +174,49 @@ const FilterModal: React.FC<FilterModalProps> = ({
     }
   };
 
+  // Function to load tags based on current location state
+  const loadTags = useCallback(async (locationOverride?: string) => {
+    try {
+      let coords: string | null = null;
+
+      // Use current location if switch is enabled and permission is granted
+      if (isCurrentLocationSwitch) {
+        const hasPermission = await locationService.checkLocationPermission();
+        if (hasPermission) {
+          coords = await locationService.getCurrentLocationForAPI();
+        }
+      }
+
+      // Use provided location override, or current tempSearchLocation, or user's postal code
+      const locationToUse = locationOverride ?? tempSearchLocationRef.current ?? user?.postalCode ?? '';
+
+      const params = coords
+        ? { coords }
+        : { location: locationToUse };
+
+      let tags: { experience: string[]; cuisine: string[]; taste: string[] } | null = null;
+      if (activeTab === 'Specials') {
+        tags = await specialService.getSpecialTags(params);
+      } else {
+        tags = await locationService.getLocationTags(params);
+      }
+
+      const exp = tags?.experience && tags.experience.length > 0 ? tags.experience : experiences;
+      const cui = tags?.cuisine && tags.cuisine.length > 0 ? tags.cuisine : cuisines;
+      const tas = tags?.taste && tags.taste.length > 0 ? tags.taste : tastes;
+
+      setExperienceOptions(exp);
+      setCuisineOptions(cui);
+      setTasteOptions(tas);
+    } catch (e) {
+      console.error('Error loading tags:', e);
+      // Fallback to static values on error
+      setExperienceOptions(experiences);
+      setCuisineOptions(cuisines);
+      setTasteOptions(tastes);
+    }
+  }, [isCurrentLocationSwitch, activeTab, user?.postalCode, tempSearchLocation]);
+
   // Initialize state with current store values when modal opens
   useFocusEffect(
     useCallback(() => {
@@ -178,12 +226,13 @@ const FilterModal: React.FC<FilterModalProps> = ({
         if (!isEnabled) {
           if (isCurrentLocation) setIsCurrentLocation(false);
         }
+        setIsCurrentLocationSwitch(!isEnabled ? false : isCurrentLocation ? true : false);
       };
+      setTempSearchLocation(searchLocation || user?.postalCode || '');
 
       if (visible) {
         checkLocation();
-
-        setTempSearchLocation(searchLocation || user?.postalCode || '');
+ 
         setTempKeywords(activeFilters.keywords.join(', '));
         setSelectedServiceTypes([...activeFilters.serviceType]);
         setSelectedPriceRanges([...activeFilters.priceRange]);
@@ -193,43 +242,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
         setSelectedDistance(radiusInMiles);
         setSelectedSortBy(sortBy);
 
-        // Fetch dynamic tags
-        const loadTags = async () => {
-          try {
-            let coords: string | null = null;
-
-            // try with current location if permission is granted
-            const hasPermission = await locationService.checkLocationPermission();
-            if (hasPermission) {
-              coords = await locationService.getCurrentLocationForAPI();
-            }
-
-            const params = coords
-              ? { coords }
-              : { location: searchedLocation || tempSearchLocation || user?.postalCode || '' };
-
-            let tags: { experience: string[]; cuisine: string[]; taste: string[] } | null = null;
-            if (activeTab === 'Specials') {
-              tags = await specialService.getSpecialTags(params);
-            } else {
-              tags = await locationService.getLocationTags(params);
-            }
-
-            const exp = tags?.experience && tags.experience.length > 0 ? tags.experience : experiences;
-            const cui = tags?.cuisine && tags.cuisine.length > 0 ? tags.cuisine : cuisines;
-            const tas = tags?.taste && tags.taste.length > 0 ? tags.taste : tastes;
-
-            setExperienceOptions(exp);
-            setCuisineOptions(cui);
-            setTasteOptions(tas);
-          } catch (e) {
-            // Fallback to static values on error
-            setExperienceOptions(experiences);
-            setCuisineOptions(cuisines);
-            setTasteOptions(tastes);
-          }
-        };
-
+        // Load tags on modal open
         loadTags();
       }
     }, [visible, activeFilters, isCurrentLocation, searchLocation, searchedLocation, radiusInMiles, sortBy, activeTab, user?.postalCode])
@@ -302,6 +315,8 @@ const FilterModal: React.FC<FilterModalProps> = ({
     const isEnabled = await checkLocationPermission();
     if (isEnabled) {
       setIsCurrentLocationSwitch(true);
+      // Load tags when switching to current location
+      // Note: loadTags will be called via useEffect when isCurrentLocationSwitch changes
     } else {
       // Use locationService to handle permission flow directly
       const granted = await locationService.handleLocationPermissionFlow();
@@ -309,6 +324,8 @@ const FilterModal: React.FC<FilterModalProps> = ({
       if (granted === true) {
         setIsCurrentLocationSwitch(true);
         setIsLocationEnabled(true);
+        // Load tags when permission is granted and switch is enabled
+        // Note: loadTags will be called via useEffect when isCurrentLocationSwitch changes
       }
     }
   };
@@ -340,6 +357,31 @@ const FilterModal: React.FC<FilterModalProps> = ({
     }
   };
 
+  // Debounced handler for loading tags based on text input
+  const handleDebouncedTagRequest = useCallback((locationText: string) => {
+    if (!visible) return;
+
+    if (isCurrentLocationSwitch) {
+      loadTags();
+      return;
+    }
+
+    const trimmed = locationText.trim();
+
+    if (!trimmed.length) {
+      if (user?.postalCode) {
+        loadTags(user.postalCode);
+      }
+      return;
+    }
+
+    if (trimmed.length >= 3) {
+      loadTags(trimmed);
+    }
+  }, [visible, isCurrentLocationSwitch, loadTags, user?.postalCode]);
+
+  const debouncedLoadTags = useDebounce(handleDebouncedTagRequest, 500);
+
   // Handle location suggestion selection
   const handleLocationSuggestionSelect = (selectedLocation: string) => {
     setIsProgrammaticChange(true);
@@ -347,16 +389,23 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setTempSearchLocation(selectedLocation);
     setShowLocationSuggestions(false);
     setLocationSuggestions([]);
+    // Load tags immediately for the selected suggestion
+    loadTags(selectedLocation);
   };
 
   // Handle location input change
   const handleLocationInputChange = (text: string) => {
     setTempSearchLocation(text);
-    if (!isProgrammaticChange) {
-      setShowLocationSuggestions(false);
-      setLocationSuggestions([]);
+
+    if (isProgrammaticChange) {
+      setIsProgrammaticChange(false);
+      return;
     }
-    setIsProgrammaticChange(false);
+
+    setShowLocationSuggestions(false);
+    setLocationSuggestions([]);
+
+    debouncedLoadTags(text);
   };
 
   // Effect for debounced location search
@@ -373,6 +422,21 @@ const FilterModal: React.FC<FilterModalProps> = ({
       setLocationSuggestions([]);
     }
   }, [visible, isCurrentLocationSwitch]);
+
+  // Reload tags when switching to current location
+  useEffect(() => {
+    if (!visible) return;
+    if (isCurrentLocationSwitch) {
+      loadTags();
+    }
+  }, [isCurrentLocationSwitch, visible, loadTags]);
+
+  // Reload tags when active tab changes
+  useEffect(() => {
+    if (visible) {
+      loadTags();
+    }
+  }, [activeTab, visible, loadTags]);
 
   // Parse keywords from comma-separated string
   const parseKeywords = (keywordString: string): string[] => {

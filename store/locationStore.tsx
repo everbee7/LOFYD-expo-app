@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { locationService } from '../services/location';
-import { specialService } from '../services/special';
-import { LocationState, Special, Location, GetSpecialsRequest, GetLocationsRequest, FilterSetting } from '../types/location';
+import { locationService, buildLocationRequestUrl } from '../services/location';
+import { specialService, buildSpecialRequestUrl } from '../services/special';
+import { LocationState, Special, Location, GetSpecialsRequest, GetLocationsRequest, FilterSetting, ServiceType } from '../types/location';
+import type { AuthState, User } from '../types/auth';
 
 // Import auth store to access user postal code
 let authStore: any = null;
@@ -15,6 +16,23 @@ try {
 const DEFAULT_LOCATION = '';
 const DEFAULT_RADIUS = 0.5;
 const DEFAULT_LIMIT = 20;
+const RESETTABLE_STORAGE_KEYS = [
+  'userLocation',
+  'userIsCurrentLocation',
+  'searchRadius',
+  'sortPreference',
+  'activeTab',
+  'deviceLocation',
+];
+
+const getDefaultFilters = (): LocationState['activeFilters'] => ({
+  serviceType: ['dine-in', 'take-out', 'delivery'] as ServiceType[],
+  keywords: [] as string[],
+  priceRange: [] as number[],
+  experience: [] as string[],
+  cuisine: [] as string[],
+  taste: [] as string[],
+});
 
 const useLocationStore = create<LocationState>((set, get) => ({
   // Data
@@ -41,14 +59,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
   activeTab: 'Specials',
 
   // Filters
-  activeFilters: {
-    serviceType: ['dine-in', 'take-out', 'delivery'], // Default to all service types
-    keywords: [],
-    priceRange: [],
-    experience: [],
-    cuisine: [],
-    taste: [],
-  },
+  activeFilters: getDefaultFilters(),
 
   // Filter Settings Log
   filterSettingLog: [],
@@ -58,6 +69,12 @@ const useLocationStore = create<LocationState>((set, get) => ({
     offset: 0,
     limit: DEFAULT_LIMIT,
     totalSize: 0,
+  },
+
+  // Last API request URLs
+  lastRequestUrls: {
+    specials: null,
+    locations: null,
   },
 
   // Initialize the store
@@ -219,14 +236,24 @@ const useLocationStore = create<LocationState>((set, get) => ({
   // Get specials with current parameters
   getSpecials: async (params: GetSpecialsRequest) => {
     try {
-      set({ isLoading: true, error: null });
+      const currentRequestUrls = get().lastRequestUrls;
+      const endpoint = buildSpecialRequestUrl(params);
+
+      set({
+        isLoading: true,
+        error: null,
+        lastRequestUrls: {
+          ...currentRequestUrls,
+          specials: endpoint,
+        }
+      });
 
       // Save the location text that's actually being used for search
       set({ searchedLocation: params.location });
 
       const response = await specialService.getSpecials(params);
 
-      set({
+      set((state) => ({
         specials: response.specials,
         pagination: {
           offset: response.offset,
@@ -234,7 +261,11 @@ const useLocationStore = create<LocationState>((set, get) => ({
           totalSize: response.totalSize,
         },
         isLoading: false,
-      });
+        lastRequestUrls: {
+          ...state.lastRequestUrls,
+          specials: endpoint,
+        }
+      }));
 
       return response;
     } catch (error: any) {
@@ -247,14 +278,24 @@ const useLocationStore = create<LocationState>((set, get) => ({
   // Get locations with current parameters
   getLocations: async (params: GetLocationsRequest) => {
     try {
-      set({ isLoading: true, error: null });
+      const currentRequestUrls = get().lastRequestUrls;
+      const endpoint = buildLocationRequestUrl(params);
+
+      set({
+        isLoading: true,
+        error: null,
+        lastRequestUrls: {
+          ...currentRequestUrls,
+          locations: endpoint,
+        }
+      });
 
       // Save the location text that's actually being used for search
       set({ searchedLocation: params.location });
 
       const response = await locationService.getLocations(params);
 
-      set({
+      set((state) => ({
         locations: response.locations,
         pagination: {
           offset: response.offset,
@@ -262,7 +303,11 @@ const useLocationStore = create<LocationState>((set, get) => ({
           totalSize: response.totalSize,
         },
         isLoading: false,
-      });
+        lastRequestUrls: {
+          ...state.lastRequestUrls,
+          locations: endpoint,
+        }
+      }));
 
       return response;
     } catch (error: any) {
@@ -331,10 +376,12 @@ const useLocationStore = create<LocationState>((set, get) => ({
           ...activeFilters,
         };
 
+        const endpoint = buildSpecialRequestUrl(params);
+
         const response = await specialService.getSpecials(params);
         const currentSpecials = get().specials;
 
-        set({
+        set((state) => ({
           specials: [...currentSpecials, ...response.specials],
           pagination: {
             offset: response.offset,
@@ -342,7 +389,11 @@ const useLocationStore = create<LocationState>((set, get) => ({
             totalSize: response.totalSize,
           },
           isLoading: false,
-        });
+          lastRequestUrls: {
+            ...state.lastRequestUrls,
+            specials: endpoint,
+          }
+        }));
       } else {
         const params: GetLocationsRequest = {
           location,
@@ -351,13 +402,15 @@ const useLocationStore = create<LocationState>((set, get) => ({
           sortBy,
           offset: pagination.offset,
           limit: pagination.limit,
-          serviceType: activeFilters.serviceType,
+          ...activeFilters,
         };
+
+        const endpoint = buildLocationRequestUrl(params);
 
         const response = await locationService.getLocations(params);
         const currentLocations = get().locations;
 
-        set({
+        set((state) => ({
           locations: [...currentLocations, ...response.locations],
           pagination: {
             offset: response.offset,
@@ -365,7 +418,11 @@ const useLocationStore = create<LocationState>((set, get) => ({
             totalSize: response.totalSize,
           },
           isLoading: false,
-        });
+          lastRequestUrls: {
+            ...state.lastRequestUrls,
+            locations: endpoint,
+          }
+        }));
       }
 
     } catch (error: any) {
@@ -500,6 +557,46 @@ const useLocationStore = create<LocationState>((set, get) => ({
     });
   },
 
+  // Reset all search-related state and persistence
+  resetSearchState: async () => {
+    set({
+      specials: [],
+      locations: [],
+      currentSpecial: null,
+      currentLocation: null,
+      searchLocation: DEFAULT_LOCATION,
+      searchedLocation: '',
+      isCurrentLocation: null,
+      locationType: 'locale',
+      radiusInMiles: DEFAULT_RADIUS,
+      sortBy: 'relevance',
+      deviceLocation: '',
+      deviceLocationType: 'locale',
+      activeTab: 'Specials',
+      activeFilters: getDefaultFilters(),
+      pagination: {
+        offset: 0,
+        limit: DEFAULT_LIMIT,
+        totalSize: 0,
+      },
+      lastRequestUrls: {
+        specials: null,
+        locations: null,
+      },
+    });
+
+    try {
+      await AsyncStorage.multiRemove(RESETTABLE_STORAGE_KEYS);
+    } catch (error) {
+      console.warn('Failed to clear stored search settings:', error);
+    }
+
+    try {
+      locationService.clearTagCaches();
+      specialService.clearTagCaches();
+    } catch {}
+  },
+
   // Search with current parameters
   searchWithCurrentParams: async () => {
     const { radiusInMiles, sortBy, activeFilters, pagination, activeTab } = get();
@@ -529,8 +626,10 @@ const useLocationStore = create<LocationState>((set, get) => ({
         sortBy,
         offset: 0, // Always start from beginning for new search
         limit: pagination.limit,
-        serviceType: activeFilters.serviceType,
+        ...activeFilters,
       };
+
+      console.log("activeFilters", activeFilters);
 
       await get().getLocations(params);
     }
@@ -624,5 +723,16 @@ const useLocationStore = create<LocationState>((set, get) => ({
     set({ currentLocation: location });
   }
 }));
+
+if (authStore) {
+  authStore.subscribe(
+    (currentUser: User | null, previousUser: User | null) => {
+      if (!currentUser && previousUser?.userId) {
+        void useLocationStore.getState().resetSearchState();
+      }
+    },
+    (state: AuthState) => state.user
+  );
+}
 
 export default useLocationStore;

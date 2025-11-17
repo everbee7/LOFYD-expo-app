@@ -18,6 +18,56 @@ export interface DeviceLocationData {
   address?: string;
 }
 
+export const buildLocationRequestUrl = (params: GetLocationsRequest): string => {
+  const queryParams = new URLSearchParams();
+
+  // Required parameters
+  if (params.locationType === 'coords') {
+    queryParams.append('coords', params.coords || '');
+  } else {
+    queryParams.append('coords', params.coords || '');
+    queryParams.append('location', params.location || '');
+  }
+  queryParams.append('locationType', params.locationType);
+  queryParams.append('radiusInMiles', params.radiusInMiles.toString());
+  queryParams.append('sortBy', params.sortBy);
+
+  // Optional parameters
+  if (params.serviceType && params.serviceType.length > 0) {
+    params.serviceType.forEach(type => queryParams.append('serviceType', type));
+  }
+
+  if (params.offset !== undefined) {
+    queryParams.append('offset', params.offset.toString());
+  }
+
+  if (params.limit !== undefined) {
+    queryParams.append('limit', params.limit.toString());
+  }
+
+  if (params.keywords && params.keywords.length > 0) {
+    params.keywords.forEach(keyword => queryParams.append('keywords', keyword));
+  }
+
+  if (params.priceRange && params.priceRange.length > 0) {
+    params.priceRange.forEach(price => queryParams.append('priceRange', price.toString()));
+  }
+
+  if (params.experience && params.experience.length > 0) {
+    params.experience.forEach(exp => queryParams.append('experience', exp));
+  }
+
+  if (params.cuisine && params.cuisine.length > 0) {
+    params.cuisine.forEach(cuisine => queryParams.append('cuisine', cuisine));
+  }
+
+  if (params.taste && params.taste.length > 0) {
+    params.taste.forEach(taste => queryParams.append('taste', taste));
+  }
+
+  return `/location?${queryParams.toString()}`;
+};
+
 export const locationService = {
   // ==================== API METHODS (Existing) ====================
 
@@ -25,33 +75,9 @@ export const locationService = {
    * Get all locations with filters
    */
   async getLocations(params: GetLocationsRequest): Promise<GetLocationsResponse> {
-    const queryParams = new URLSearchParams();
+    const endpoint = buildLocationRequestUrl(params);
 
-    // Required parameters
-    if (params.locationType === 'coords') {
-      queryParams.append('coords', params.coords || '');
-    } else {
-      queryParams.append('coords', params.coords || '');
-      queryParams.append('location', params.location || '');
-    }
-    queryParams.append('locationType', params.locationType);
-    queryParams.append('radiusInMiles', params.radiusInMiles.toString());
-    queryParams.append('sortBy', params.sortBy);
-
-    // Optional parameters
-    if (params.serviceType && params.serviceType.length > 0) {
-      params.serviceType.forEach(type => queryParams.append('serviceType', type));
-    }
-
-    if (params.offset !== undefined) {
-      queryParams.append('offset', params.offset.toString());
-    }
-
-    if (params.limit !== undefined) {
-      queryParams.append('limit', params.limit.toString());
-    }
-
-    return apiRequest<GetLocationsResponse>(`/location?${queryParams.toString()}`, 'GET');
+    return apiRequest<GetLocationsResponse>(endpoint, 'GET');
   },
 
   /**
