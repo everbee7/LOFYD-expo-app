@@ -8,28 +8,28 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		3D3EDEEC37D73A7AF17312D8 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 50C139FD8BF91E2A6F6B0E8B /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		6FCE585CCA8D26C3E3ADD5A0 /* libPods-LOFYD.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 96FD7EA50058836C28E683C7 /* libPods-LOFYD.a */; };
+		65D94F92337E6F38ADAB46B0 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32DE1E01E0F50001C663F65C /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		E40228B08C3CE3DC0E240B80 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7883C7C7C939C5ACF37070 /* ExpoModulesProvider.swift */; };
+		DA24BA994240E94FE8614674 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F66D00B8530513EDD185082C /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		F8515C752DD477B4EF078600 /* libPods-LOFYD.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9F63164421C9610904B50C42 /* libPods-LOFYD.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		13B07F961A680F5B00A75B9A /* LOFYD.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LOFYD.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = LOFYD/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = LOFYD/Info.plist; sourceTree = "<group>"; };
-		1D7883C7C7C939C5ACF37070 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-LOFYD/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		50C139FD8BF91E2A6F6B0E8B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = LOFYD/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		5DD7B2FEEA3457E3C8F8C729 /* Pods-LOFYD.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LOFYD.release.xcconfig"; path = "Target Support Files/Pods-LOFYD/Pods-LOFYD.release.xcconfig"; sourceTree = "<group>"; };
-		96FD7EA50058836C28E683C7 /* libPods-LOFYD.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-LOFYD.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		16BD94D1843A74953213DB22 /* Pods-LOFYD.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LOFYD.debug.xcconfig"; path = "Target Support Files/Pods-LOFYD/Pods-LOFYD.debug.xcconfig"; sourceTree = "<group>"; };
+		32DE1E01E0F50001C663F65C /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-LOFYD/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		6BE5558D1C2A6999878B0DC2 /* Pods-LOFYD.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LOFYD.release.xcconfig"; path = "Target Support Files/Pods-LOFYD/Pods-LOFYD.release.xcconfig"; sourceTree = "<group>"; };
+		9F63164421C9610904B50C42 /* libPods-LOFYD.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-LOFYD.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = LOFYD/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		D6E351D16981B874D792455C /* Pods-LOFYD.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-LOFYD.debug.xcconfig"; path = "Target Support Files/Pods-LOFYD/Pods-LOFYD.debug.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = LOFYD/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* LOFYD-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "LOFYD-Bridging-Header.h"; path = "LOFYD/LOFYD-Bridging-Header.h"; sourceTree = "<group>"; };
+		F66D00B8530513EDD185082C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = LOFYD/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,7 +37,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6FCE585CCA8D26C3E3ADD5A0 /* libPods-LOFYD.a in Frameworks */,
+				F8515C752DD477B4EF078600 /* libPods-LOFYD.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,26 +53,28 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				50C139FD8BF91E2A6F6B0E8B /* PrivacyInfo.xcprivacy */,
+				F66D00B8530513EDD185082C /* PrivacyInfo.xcprivacy */,
 			);
 			name = LOFYD;
+			sourceTree = "<group>";
+		};
+		1E07224C9F80C4FB2FC65E2F /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				16BD94D1843A74953213DB22 /* Pods-LOFYD.debug.xcconfig */,
+				6BE5558D1C2A6999878B0DC2 /* Pods-LOFYD.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				96FD7EA50058836C28E683C7 /* libPods-LOFYD.a */,
+				9F63164421C9610904B50C42 /* libPods-LOFYD.a */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		53AE8E1EBF5A25F7A116984A /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				C07AA4C3E799318B69D32B10 /* LOFYD */,
-			);
-			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -89,8 +91,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				95DD0E341F0F11FF617C1557 /* Pods */,
-				53AE8E1EBF5A25F7A116984A /* ExpoModulesProviders */,
+				1E07224C9F80C4FB2FC65E2F /* Pods */,
+				B1AEDC4188CBCFAC5567E61D /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -105,14 +107,20 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		95DD0E341F0F11FF617C1557 /* Pods */ = {
+		9D688A8A3A625F405A8631C3 /* LOFYD */ = {
 			isa = PBXGroup;
 			children = (
-				D6E351D16981B874D792455C /* Pods-LOFYD.debug.xcconfig */,
-				5DD7B2FEEA3457E3C8F8C729 /* Pods-LOFYD.release.xcconfig */,
+				32DE1E01E0F50001C663F65C /* ExpoModulesProvider.swift */,
 			);
-			name = Pods;
-			path = Pods;
+			name = LOFYD;
+			sourceTree = "<group>";
+		};
+		B1AEDC4188CBCFAC5567E61D /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				9D688A8A3A625F405A8631C3 /* LOFYD */,
+			);
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -124,14 +132,6 @@
 			path = LOFYD/Supporting;
 			sourceTree = "<group>";
 		};
-		C07AA4C3E799318B69D32B10 /* LOFYD */ = {
-			isa = PBXGroup;
-			children = (
-				1D7883C7C7C939C5ACF37070 /* ExpoModulesProvider.swift */,
-			);
-			name = LOFYD;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -140,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "LOFYD" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				314CC24401AFBA7F935119F4 /* [Expo] Configure project */,
+				2257C52BC07B1DD4A37E1071 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				C759AF5AF65685D56E00A187 /* [CP] Embed Pods Frameworks */,
+				B5F348D0486A1500F3AB4D8E /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -167,6 +167,8 @@
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1250;
+						DevelopmentTeam = "8B7U2SL2L4";
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -196,7 +198,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				3D3EDEEC37D73A7AF17312D8 /* PrivacyInfo.xcprivacy in Resources */,
+				DA24BA994240E94FE8614674 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -240,7 +242,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		314CC24401AFBA7F935119F4 /* [Expo] Configure project */ = {
+		2257C52BC07B1DD4A37E1071 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -277,14 +279,11 @@
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoSystemUI/ExpoSystemUI_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/RCT-Folly_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/RNCAsyncStorage/RNCAsyncStorage_resources.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/RNImageCropPicker/RNImageCropPickerPrivacyInfo.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/RNImageCropPicker/QBImagePicker.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/RNSVG/RNSVGFilters.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/ReachabilitySwift/ReachabilitySwift.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/React-cxxreact/React-cxxreact_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/SDWebImage/SDWebImage.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/TOCropViewController/TOCropViewControllerBundle.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/boost/boost_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/glog/glog_privacy.bundle",
 			);
@@ -301,14 +300,11 @@
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoSystemUI_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RCT-Folly_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNCAsyncStorage_resources.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNImageCropPickerPrivacyInfo.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/QBImagePicker.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNSVGFilters.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ReachabilitySwift.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-Core_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/React-cxxreact_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/SDWebImage.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/TOCropViewControllerBundle.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/boost_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/glog_privacy.bundle",
 			);
@@ -317,7 +313,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-LOFYD/Pods-LOFYD-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		C759AF5AF65685D56E00A187 /* [CP] Embed Pods Frameworks */ = {
+		B5F348D0486A1500F3AB4D8E /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -343,7 +339,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				E40228B08C3CE3DC0E240B80 /* ExpoModulesProvider.swift in Sources */,
+				65D94F92337E6F38ADAB46B0 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -352,7 +348,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D6E351D16981B874D792455C /* Pods-LOFYD.debug.xcconfig */;
+			baseConfigurationReference = 16BD94D1843A74953213DB22 /* Pods-LOFYD.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -377,18 +373,21 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.lofyd.app;
-				PRODUCT_NAME = LOFYD;
+				PRODUCT_NAME = "LOFYD";
 				SWIFT_OBJC_BRIDGING_HEADER = "LOFYD/LOFYD-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				DEVELOPMENT_TEAM = "8B7U2SL2L4";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Debug;
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5DD7B2FEEA3457E3C8F8C729 /* Pods-LOFYD.release.xcconfig */;
+			baseConfigurationReference = 6BE5558D1C2A6999878B0DC2 /* Pods-LOFYD.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -408,11 +407,14 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.lofyd.app;
-				PRODUCT_NAME = LOFYD;
+				PRODUCT_NAME = "LOFYD";
 				SWIFT_OBJC_BRIDGING_HEADER = "LOFYD/LOFYD-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+				DEVELOPMENT_TEAM = "8B7U2SL2L4";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 			};
 			name = Release;
 		};

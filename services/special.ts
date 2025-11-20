@@ -99,10 +99,6 @@ export const specialService = {
 
   async clearTagCaches(): Promise<void> {
     try {
-      // dynamic import to avoid circular deps with other services
-      const { default: _unused } = await import('react-native');
-    } catch {}
-    try {
       const indexRaw = await AsyncStorage.getItem(this._tagIndexKey as any);
       if (indexRaw) {
         const keys: string[] = JSON.parse(indexRaw);
