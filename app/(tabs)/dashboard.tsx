@@ -405,7 +405,7 @@ export default function DashboardScreen() {
           </Text>
         </View>
 
-      {(() => {
+      {/* {(() => {
         const activeRequestUrl = activeTab === 'Specials'
           ? lastRequestUrls.specials
           : lastRequestUrls.locations;
@@ -421,7 +421,7 @@ export default function DashboardScreen() {
           </Text>
         </View>
         );
-      })()}
+      })()} */}
       </View>
 
       {/* Error Display */}
