@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { locationService, buildLocationRequestUrl } from '../services/location';
 import { specialService, buildSpecialRequestUrl } from '../services/special';
-import { LocationState, Special, Location, GetSpecialsRequest, GetLocationsRequest, FilterSetting, ServiceType } from '../types/location';
+import { LocationState, Special, Location, GetSpecialsRequest, GetLocationsRequest, FilterSetting, ServiceType, LocationType } from '../types/location';
 import type { AuthState, User } from '../types/auth';
 
 // Import auth store to access user postal code
@@ -34,7 +34,32 @@ const getDefaultFilters = (): LocationState['activeFilters'] => ({
   taste: [] as string[],
 });
 
-const useLocationStore = create<LocationState>((set, get) => ({
+const useLocationStore = create<LocationState>((set, get) => {
+  const resolveCoordsForRequest = async (location: string, locationType: LocationType): Promise<string> => {
+    if (locationType === 'coords') {
+      return location;
+    }
+
+    const trimmedLocation = location?.trim() ?? '';
+    if (!trimmedLocation) {
+      return get().deviceLocation || '';
+    }
+
+    const geocodedCoords = await locationService.getCoordsFromLocation(trimmedLocation);
+    if (geocodedCoords) {
+      return geocodedCoords;
+    }
+
+    const fallbackDeviceLocation = get().deviceLocation;
+    if (fallbackDeviceLocation) {
+      return fallbackDeviceLocation;
+    }
+
+    console.warn(`Unable to geocode location "${trimmedLocation}", sending raw value`);
+    return trimmedLocation;
+  };
+
+  return ({
   // Data
   specials: [],
   locations: [],
@@ -361,13 +386,15 @@ const useLocationStore = create<LocationState>((set, get) => ({
 
     // Use effective location (user location or device location)
     const { location, locationType } = await get().getEffectiveLocation();
+    const coordsForRequest = await resolveCoordsForRequest(location, locationType);
 
     try {
       set({ isLoading: true });
 
       if (activeTab === 'Specials') {
         const params: GetSpecialsRequest = {
-          location,
+          location: locationType === 'coords' ? undefined : location,
+          coords: coordsForRequest,
           locationType,
           radiusInMiles,
           sortBy,
@@ -396,7 +423,8 @@ const useLocationStore = create<LocationState>((set, get) => ({
         }));
       } else {
         const params: GetLocationsRequest = {
-          location,
+          location: locationType === 'coords' ? undefined : location,
+          coords: coordsForRequest,
           locationType,
           radiusInMiles,
           sortBy,
@@ -603,11 +631,13 @@ const useLocationStore = create<LocationState>((set, get) => ({
 
     // Use effective location (user location or device location)
     const { location, locationType } = await get().getEffectiveLocation();
+    const coordsForRequest = await resolveCoordsForRequest(location, locationType);
+    console.log('searchWithCurrentParams', location);
 
     if (activeTab === 'Specials') {
       const params: GetSpecialsRequest = {
         location: locationType === 'coords' ? undefined : location,
-        coords: locationType === 'coords' ? location : undefined,
+        coords: coordsForRequest,
         locationType,
         radiusInMiles,
         sortBy,
@@ -620,7 +650,7 @@ const useLocationStore = create<LocationState>((set, get) => ({
     } else {
       const params: GetLocationsRequest = {
         location: locationType === 'coords' ? undefined : location,
-        coords: locationType === 'coords' ? location : undefined,
+        coords: coordsForRequest,
         locationType,
         radiusInMiles,
         sortBy,
@@ -722,7 +752,8 @@ const useLocationStore = create<LocationState>((set, get) => ({
   setCurrentLocation: (location: Location | null) => {
     set({ currentLocation: location });
   }
-}));
+  });
+});
 
 if (authStore) {
   authStore.subscribe(

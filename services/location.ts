@@ -120,6 +120,35 @@ export const locationService = {
   },
 
   /**
+   * Geocode a locale string into coords (cached)
+   */
+  async getCoordsFromLocation(location: string): Promise<string | null> {
+    const trimmed = location?.trim();
+    if (!trimmed) return null;
+
+    const cached = this._geocodeCache[trimmed];
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      const results = await Location.geocodeAsync(trimmed);
+      if (results && results.length > 0) {
+        const { latitude, longitude } = results[0];
+        if (typeof latitude === 'number' && typeof longitude === 'number') {
+          const coords = this.buildCoordsLocation(latitude, longitude);
+          this._geocodeCache[trimmed] = coords;
+          return coords;
+        }
+      }
+    } catch (error) {
+      console.error(`Failed to geocode location "${trimmed}":`, error);
+    }
+
+    return null;
+  },
+
+  /**
    * Helper method to build location string from coordinates
    */
   buildCoordsLocation(latitude: number, longitude: number): string {
@@ -444,6 +473,7 @@ export const locationService = {
   // ==================== TAG CACHE (Private) ====================
   _tagTTLMs: 24 * 60 * 60 * 1000,
   _tagIndexKey: 'cache:index:locationTags',
+  _geocodeCache: {} as Record<string, string>,
 
   async clearTagCaches(): Promise<void> {
     try {
