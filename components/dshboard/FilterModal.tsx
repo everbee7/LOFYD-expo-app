@@ -206,8 +206,17 @@ const FilterModal: React.FC<FilterModalProps> = ({
       const tas = tags?.taste && tags.taste.length > 0 ? tags.taste : tastes;
 
       setExperienceOptions(exp);
+      setSelectedExperiences(prev =>
+        prev.filter(experience => exp.includes(experience))
+      );
       setCuisineOptions(cui);
+      setSelectedCuisines(prev =>
+        prev.filter(cuisine => cui.includes(cuisine))
+      );
       setTasteOptions(tas);
+      setSelectedTastes(prev =>
+        prev.filter(taste => tas.includes(taste))
+      );
     } catch (e) {
       console.error('Error loading tags:', e);
       // Fallback to static values on error
@@ -450,6 +459,7 @@ const FilterModal: React.FC<FilterModalProps> = ({
   const handleApplyFilters = async () => {
     // Apply all filters in one operation
     const keywordArray = parseKeywords(tempKeywords);
+    console.log("selectedCuisines:", selectedCuisines);
 
     setFilters({
       serviceType: selectedServiceTypes as ServiceType[],
