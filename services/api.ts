@@ -8,7 +8,7 @@ const API_URL = Constants.expoConfig?.extra?.API_URL || 'http://localhost:5000/a
 // Create axios instance
 const apiClient = axios.create({
     baseURL: API_URL,
-    timeout: 10000,
+    timeout: 30000,
 });
 
 // Flag to prevent multiple refresh attempts
@@ -68,7 +68,7 @@ const updateStoredTokens = async (tokens: {
 // Create a separate axios instance for token refresh (no interceptors)
 const refreshApiClient = axios.create({
     baseURL: API_URL,
-    timeout: 10000,
+    timeout: 30000,
 });
 
 // Token refresh function that bypasses interceptors

@@ -6,7 +6,8 @@ import {
   GetLocationsRequest,
   GetLocationsResponse,
   Location as LocationType,
-  LocationTagResponse
+  LocationTagResponse,
+  VerifyLocationResponse,
 } from '../types/location';
 
 // Constants
@@ -85,6 +86,13 @@ export const locationService = {
    */
   async getLocationById(id: string): Promise<LocationType> {
     return apiRequest<LocationType>(`/location/${id}`, 'GET');
+  },
+
+  /**
+   * Submit a verification rating for a location (1–10)
+   */
+  async verifyLocation(locationId: string, rating: number): Promise<VerifyLocationResponse> {
+    return apiRequest<VerifyLocationResponse>(`/location/${locationId}/verify`, 'POST', { rating });
   },
 
   /**

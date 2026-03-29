@@ -37,6 +37,15 @@ export interface Location {
   images: string[];
   timezone: string;
   neighborhood: string;
+  verification_count: number;
+  verified_badge: boolean;
+  user_has_verified?: boolean;
+}
+
+export interface VerifyLocationResponse {
+  verification_count: number;
+  verified_badge: boolean;
+  user_has_verified: boolean;
 }
 
 export interface Special {

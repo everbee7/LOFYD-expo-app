@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../contexts/ThemeContext';
+import VerifiedBadge from './VerifiedBadge';
+import { formatVerificationCount } from '../utils/formatVerificationCount';
 
 interface LocationItemProps {
   location: {
@@ -16,6 +18,8 @@ interface LocationItemProps {
     priceRange: string;
     serviceType: string[];
     specialId?: string;
+    verified_badge?: boolean;
+    verification_count?: number;
   };
   isSpecial?: boolean;
   onPress?: () => void;
@@ -52,6 +56,9 @@ export default function LocationItem({ location, onPress, isSpecial = false}: Lo
           </Text>
           {Boolean(location.distance) && (
             <Text style={styles.locationDistance}>{location.distance}</Text>
+          )}
+          {location.verified_badge && (
+            <VerifiedBadge count={location.verification_count ?? 0} />
           )}
         </View>
         <Image source={location.image ? { uri: location.image } : require('../assets/images/default-location-rec.jpg')} style={styles.locationImage} />

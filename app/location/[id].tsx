@@ -21,8 +21,11 @@ import { useTheme } from '../../contexts/ThemeContext';
 import Tabs from '@/components/common/Tabs';
 import useLocationStore from '@/store/locationStore';
 import { specialService } from '@/services/special';
-import { DailyHours, Location, Special } from '@/types/location';
+import { DailyHours, Location, Special, VerifyLocationResponse } from '@/types/location';
 import { serviceTypeLabels } from '@/app/(tabs)/dashboard';
+import VerifyButton from '@/components/VerifyButton';
+import VerifiedBadge from '@/components/VerifiedBadge';
+import { formatVerificationCount } from '@/utils/formatVerificationCount';
 
 export default function LocationDetail() {
   const { id, specialId } = useLocalSearchParams();
@@ -37,6 +40,9 @@ export default function LocationDetail() {
   const [selectedSpecial, setSelectedSpecial] = useState<Special | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [verificationCount, setVerificationCount] = useState(0);
+  const [verifiedBadge, setVerifiedBadge] = useState(false);
+  const [userHasVerified, setUserHasVerified] = useState(false);
 
   // Utility function to format phone numbers
   const formatPhoneNumber = (phone: string): string => {
@@ -198,6 +204,9 @@ export default function LocationDetail() {
       ]);
 
       setLocation(locationData);
+      setVerificationCount(locationData.verification_count ?? 0);
+      setVerifiedBadge(locationData.verified_badge ?? false);
+      setUserHasVerified(locationData.user_has_verified ?? false);
       setSpecials(specialsData);
 
       // If specialId is provided, find and select the corresponding special
@@ -348,6 +357,12 @@ export default function LocationDetail() {
       console.error('Error making phone call:', error);
       Alert.alert('Error', 'Unable to make phone call. Please try again.');
     }
+  };
+
+  const handleVerified = (result: VerifyLocationResponse) => {
+    setVerificationCount(result.verification_count);
+    setVerifiedBadge(result.verified_badge);
+    setUserHasVerified(result.user_has_verified);
   };
 
   const formatHours = (hours: DailyHours[]) => {
@@ -508,6 +523,22 @@ export default function LocationDetail() {
                 </Text>
               </View>
               <Text style={styles.hours}>{todayHours}</Text>
+            </View>
+
+            <View style={styles.verificationRow}>
+              {verifiedBadge && (
+                <VerifiedBadge count={verificationCount} />
+              )}
+              {!verifiedBadge && verificationCount > 0 && (
+                <Text style={styles.verificationCountText}>
+                  {formatVerificationCount(verificationCount)} verifications
+                </Text>
+              )}
+              <VerifyButton
+                locationId={location.id}
+                userHasVerified={userHasVerified}
+                onVerified={handleVerified}
+              />
             </View>
           </View>
           <View style={styles.headerActions}>
@@ -812,6 +843,16 @@ const createStyles = (theme: any) => StyleSheet.create({
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  verificationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  verificationCountText: {
+    fontSize: 12,
+    color: '#555',
   },
   statusBadge: {
     paddingHorizontal: theme.spacing.md,

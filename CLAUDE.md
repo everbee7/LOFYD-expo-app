@@ -8,7 +8,7 @@ React Native (Expo) mobile app for LOFYD. This file documents the backend API co
 
 - **Base URL**: `EXPO_PUBLIC_API_URL` env var (defaults to `http://localhost:5000/api`)
 - **HTTP client**: axios with interceptors (`services/api.ts`)
-- **Timeout**: 10 seconds
+- **Timeout**: 30 seconds
 - **Auth header**: `Authorization: Bearer {idToken}` on all requests except `/auth/refresh-token`
 
 ## Endpoints Called
@@ -226,3 +226,23 @@ store/locationStore.tsx  — search state, filters, pagination, tag cache
 types/auth.ts            — User, Token, LoginResponse types
 types/location.ts        — Location, Special, filter types
 ```
+
+## Implementation Workflow
+
+### Branching
+- `feat/{brief-description}` for features, `fix/{brief-description}` for bugs
+- **Max 2 dashes** in the description: `feat/hello-endpoint` ✅ — never `feat/add-hello-world-endpoint` ❌
+- Never commit directly to `main` — always open a PR
+
+### Test-Driven Development (mandatory)
+1. **Write the failing test first** — run it to confirm it fails for the right reason
+2. **Write minimum implementation** — only enough to make the test pass
+3. **Run `yarn test`** — confirm all tests pass
+4. **Refactor** — clean up keeping tests green
+5. **Repeat** — one behaviour at a time
+
+Rules: never write implementation before a test exists for it. Every bug fix starts with a reproducing test. Do not skip or comment out tests.
+
+### Finishing
+- Always open a PR — never push to `main` without one
+- PR body must include `Closes lofyd/product#N`, a summary, and a test plan
